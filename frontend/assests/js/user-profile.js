@@ -7,7 +7,8 @@ async function loadUserProfile() {
       return;
     }
 
-    const response = await fetch('http://localhost:3000/api/auth/me', {
+    const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman-backend.onrender.com';
+    const response = await fetch(`${API_URL}/api/auth/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
