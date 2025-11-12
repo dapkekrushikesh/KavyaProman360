@@ -1,0 +1,38 @@
+========================================
+KAVYAPROMAN360 - RENDER DEPLOYMENT INFO
+========================================
+
+Frontend URL: https://kavyaproman360.onrender.com
+Backend URL:  https://kavyaproman360-backend.onrender.com
+
+========================================
+WHAT TO DO NEXT:
+========================================
+
+1. Update config.js with your ACTUAL backend URL:
+   File: frontend/assests/js/config.js
+   
+   Replace:
+   BASE_URL: 'https://kavyaproman360-backend.onrender.com',
+   
+   With your actual Render backend URL from your dashboard
+
+2. Commit and push changes:
+   git add .
+   git commit -m "Fix API URLs for Render deployment"
+   git push origin main
+
+3. Render will automatically redeploy both frontend and backend
+
+4. Test login at: https://kavyaproman360.onrender.com
+
+========================================
+CHECKING YOUR BACKEND URL:
+========================================
+
+Go to: https://render.com/dashboard
+Find your backend service
+Copy the URL (should look like: https://kavyaproman360-something.onrender.com)
+Update frontend/assests/js/config.js with that URL
+
+========================================
