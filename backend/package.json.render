@@ -1,0 +1,17 @@
+{
+  "name": "kavyaproman360-backend",
+  "version": "1.0.0",
+  "description": "KavyaProman360 Backend API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "keywords": ["project-management", "backend", "api"],
+  "author": "dapkekrushikesh@gmail.com",
+  "license": "MIT"
+}

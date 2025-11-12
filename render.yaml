@@ -1,0 +1,43 @@
+services:
+  # Backend API Service
+  - type: web
+    name: kavyaproman360-backend
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: UPLOAD_DIR
+        value: uploads
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_FROM_EMAIL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+    healthCheckPath: /api/auth/health
+
+  # Frontend Static Site
+  - type: static
+    name: kavyaproman360-frontend
+    runtime: static
+    buildCommand: echo "No build needed for static site"
+    staticPublishPath: ./frontend
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: BACKEND_URL
+        sync: false

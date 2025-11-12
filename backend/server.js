@@ -11,13 +11,32 @@ const PORT = process.env.PORT || 3000;
 connectDB();
 
 // Middlewares
-app.use(cors());
+// CORS configuration - allows frontend to access backend
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:8080',
+    'https://kavyaproman360-frontend.onrender.com',
+    process.env.FRONTEND_URL
+  ].filter(Boolean), // Remove undefined values
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Make upload dir express-served
 const uploadDir = process.env.UPLOAD_DIR || 'uploads';
 app.use(`/${uploadDir}`, express.static(path.join(__dirname, uploadDir)));
+
+// Health check endpoint for monitoring
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
 // API routes
 app.use('/api/auth', require('./routes/auth'));
