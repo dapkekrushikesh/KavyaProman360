@@ -1,0 +1,38 @@
+# Environment Variables (IMPORTANT: Never commit these!)
+backend/.env
+.env
+
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+build/
+*.log
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Uploads and user-generated content
+backend/uploads/
+uploads/
+
+# Test coverage
+coverage/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
