@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KavyaProman360 |Login</title>
+  <link rel="icon" type="image/x-icon" href="assests/img/fevicon.jpg">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assests/css/style.css" />
+</head>
+
+<body>
+
+  <div class="background-overlay"></div>
+
+  <div class="login-container">
+    <div class="left-panel">
+      <div style="display: flex; align-items: center; justify-content: center; ">
+        <img src="assests/img/kavyaProman360clear.png" alt="KavyaProman360 Logo" style="width: 220px; height: 60px; border-radius: 15px; object-fit: contain; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+      </div>
+      <h2 style="font-size: 1rem; font-weight: 500; margin-bottom: 8px;">Secure Login</h2>
+      <p style="font-size: 0.85rem; color: #d9d9d9; line-height: 1.5;">Your Workplace Hub for Task Management and Progress Tracking.</p>
+    </div>
+
+    <div class="right-panel">
+      <h1>Welcome Back</h1>
+      <p class="subtitle">Sign in to continue</p>
+
+      <form id="loginForm" novalidate>
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@kavyainfoweb.com" required autocomplete="username" />
+          <div class="error-message" id="email-error"></div>
+        </div>
+
+        <div class="input-group">
+          <label for="password">Password</label>
+          <div style="position:relative;width:100%;">
+            <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password" style="width:100%;padding-right:45px;" />
+            <span id="togglePassword" style="position:absolute;top:50%;right:15px;transform:translateY(-50%);cursor:pointer;color:#888;z-index:10;">
+              <i class="fa fa-eye" id="togglePasswordIcon"></i>
+            </span>
+          </div>
+          <div class="error-message" id="password-error"></div>
+        </div>
+        
+        <button type="submit" class="btn-login">Login</button>
+        <p class="signup-text">
+          Don't have an account? <a href="signup.html">Sign up</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <div class="search-box">
+    <input type="text" placeholder="Search...">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </div>
+
+  <script src="assests/js/script.js"></script>
+  <script src="https://kit.fontawesome.com/48824742cf.js" crossorigin="anonymous"></script>
+  <script>
+    document.getElementById('togglePassword').addEventListener('click', function() {
+      const passwordInput = document.getElementById('password');
+      const icon = document.getElementById('togglePasswordIcon');
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    });
+  </script>
+</body>
+
+</html>

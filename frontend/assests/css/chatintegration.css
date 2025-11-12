@@ -1,0 +1,218 @@
+body {
+      background: #f8f9fa;
+      font-family: "Poppins", sans-serif;
+    }
+
+    .sidebar {
+      background: #1e1e2d;
+      color: #fff;
+      min-height: 100vh;
+      padding-top: 30px;
+    }
+
+    .sidebar a {
+      color: #cfcfd6;
+      display: block;
+      padding: 12px 20px;
+      text-decoration: none;
+      transition: .3s;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: #34344a;
+      color: #fff;
+      border-left: 4px solid #ffb400;
+    }
+
+    .topbar {
+      background: #fff;
+      padding: 15px 25px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      padding: 6px 15px;
+      width: 250px;
+      padding-right: 38px; /* space for icon */
+    }
+
+    .search-box .fa-search,
+    .search-box .fa-magnifying-glass {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #b0b0b0;
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    .chat-container {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: calc(100vh - 80px);
+    }
+
+    .chat-list {
+      background: #fff;
+      border-right: 1px solid #dee2e6;
+      overflow-y: auto;
+    }
+
+    .chat-list-item {
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .chat-list-item:hover,
+    .chat-list-item.active {
+      background: #fff8e1;
+    }
+
+    .chat-list-item h6 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .chat-list-item small {
+      color: #6c757d;
+    }
+
+    .chat-box {
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #f1f5f9;
+    }
+
+    .message {
+      margin-bottom: 15px;
+      max-width: 70%;
+      padding: 10px 15px;
+      border-radius: 12px;
+    }
+
+    .message.sent {
+      background: #ffb400;
+      color: #fff;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+    }
+
+    .message.received {
+      background: #fff;
+      border: 1px solid #ddd;
+      margin-right: auto;
+      border-bottom-left-radius: 0;
+    }
+
+    .chat-input {
+      padding: 15px;
+      background: #fff;
+      border-top: 1px solid #ddd;
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-input input {
+      flex: 1;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      padding: 10px 15px;
+    }
+
+    .chat-input button {
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      background: #ffb400;
+      color: #fff;
+    }
+
+    .chat-input button:hover {
+      background: #e0a000;
+    }
+
+    /* Profile Modal */
+.profile-modal .modal-header {
+  background-color: #3b3b63;
+  color: #fff;
+  border-bottom: none;
+}
+
+.profile-modal .modal-body {
+  text-align: center;
+}
+
+.profile-modal img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.profile-modal .btn-primary {
+  background-color: #3b3b63;
+  border: none;
+}
+
+.profile-modal .btn-primary:hover {
+  background-color: #5a5a87;
+}
+
+.profile-modal .btn-secondary {
+  background-color: #e6e6f0;
+  border: none;
+  color: #3b3b63;
+}
+
+.profile-modal .btn-secondary:hover {
+  background-color: #d0d0eb;
+  color: #3b3b63;
+}
+
+/* Profile Details Modal */
+.profile-details .modal-header {
+  background-color: #3b3b63;
+  color: #fff;
+  border-bottom: none;
+}
+
+.profile-details .modal-body {
+  text-align: center;
+}
+
+.profile-details .modal-body p {
+  margin: 8px 0;
+  color: #3b3b63;
+  font-weight: 500;
+}
+
+    @media(max-width:992px) {
+      .chat-container {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-list {
+        display: none;
+      }
+    }

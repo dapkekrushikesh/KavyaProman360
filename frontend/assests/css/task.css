@@ -1,0 +1,460 @@
+/* --- Basic Layout --- */
+body {
+  background: #f4f6fa;
+  font-family: "Poppins", sans-serif;
+  margin: 0;
+}
+
+/* Sidebar */
+.sidebar {
+  background: linear-gradient(180deg, #3b3b63, #52528c);
+  color: #fff;
+  min-height: 100vh;
+  padding-top: 30px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 220px;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar h4 {
+  color: #f3f3f3;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.sidebar a {
+  color: #e4e4e9;
+  display: block;
+  padding: 12px 20px;
+  text-decoration: none;
+  transition: 0.3s;
+  font-size: 15px;
+  border-left: 4px solid transparent;
+}
+
+/* Highlight Hover + Active */
+.sidebar a:hover,
+.sidebar a.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-left: 4px solid #f7f7f9;
+  padding-left: 25px;
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  background: #3b3b63;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 5px;
+  z-index: 1100;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+}
+
+/* Topbar */
+.topbar {
+position: fixed;
+  top: 0;
+  left: 220px; /* match your sidebar width */
+  right: 0;
+  height: 70px;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 25px;
+  z-index: 998;
+  border-radius: 0 0 15px 15px;
+}
+
+.btn-new{
+  background-color: #3b3b63!important;
+  color: #ffffff!important;
+}
+
+
+.main-content {
+  margin-left: 220px; /* same as sidebar width */
+  padding: 100px 28px 40px; /* top padding = topbar height + 30px gap */
+  background: #f4f6fa;
+  min-height: 100vh;
+}
+
+
+/* --- SEARCH BOX FIX --- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar .search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.topbar .search-box i {
+  position: absolute;
+  left: 12px;
+  color: #777;
+  font-size: 14px;
+}
+
+.topbar .search-box input {
+  padding-left: 35px; /* space for icon */
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  height: 36px;
+}
+
+/* Cards / Stats */
+.card {
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(31, 44, 71, 0.06);
+  border: none;
+}
+
+.badge-high {
+  background: #ff4d4d;
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.badge-medium {
+  background: #ffbd39;
+  color: #111;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.badge-low {
+  background: #3bb54a;
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.btn-new {
+  background: #5569ff;
+  color: #fff;
+  border-radius: 8px;
+}
+
+/* Table */
+.table td,
+.table th {
+  vertical-align: middle;
+}
+
+.action-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+/* Comment Modal */
+#commentList {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 8px;
+  background: #fbfbfd;
+  border: 1px solid #eef0f6;
+}
+
+.comment-item {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 2px rgba(22, 28, 40, 0.04);
+}
+
+.comment-time {
+  font-size: 12px;
+  color: #7b8191;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.search-box input {
+     border-radius: 30px;
+    border: 1px solid #ccc;
+    padding: 6px 15px;
+    width: 250px;
+    transition: 0.3s;
+    padding-right: 38px;
+}
+.search-box input:focus {
+    border-color: #3b3b63;
+    outline: none;
+    box-shadow: 0 0 5px rgba(60, 70, 181, 0.5);
+}
+.search-box .fa-search,
+.search-box .fa-magnifying-glass {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #b0b0b0;
+  font-size: 16px;
+  pointer-events: none;
+}
+
+
+/* Profile Modal */
+.profile-modal .modal-header {
+  background-color: #3b3b63;
+  color: #fff;
+  border-bottom: none;
+}
+
+.profile-modal .modal-body {
+  text-align: center;
+}
+
+.profile-modal img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.profile-modal .btn-primary {
+  background-color: #3b3b63;
+  border: none;
+}
+
+.profile-modal .btn-primary:hover {
+  background-color: #5a5a87;
+}
+
+.profile-modal .btn-secondary {
+  background-color: #e6e6f0;
+  border: none;
+  color: #3b3b63;
+}
+
+.profile-modal .btn-secondary:hover {
+  background-color: #d0d0eb;
+  color: #3b3b63;
+}
+
+/* Profile Details Modal */
+.profile-details .modal-header {
+  background-color: #3b3b63;
+  color: #fff;
+  border-bottom: none;
+}
+
+.profile-details .modal-body {
+  text-align: center;
+}
+
+.profile-details .modal-body p {
+  margin: 8px 0;
+  color: #3b3b63;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .mobile-menu-toggle {
+    display: block;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+
+  .topbar {
+    left: 0;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding-top: 120px;
+  }
+}
+/* =======================
+   TASK STATS CARD STYLING
+   ======================= */
+
+.main-content .card {
+  background: #ffffff;
+  border: none;
+  border-top: 4px solid #52528C; /* Purple top border same as dashboard */
+  border-radius: 14px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s ease;
+  padding: 25px 15px !important;
+}
+
+.main-content .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+/* Card Title (like All Tasks, Pending, etc.) */
+.main-content .card h6 {
+  color: #333;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+/* Card Number (like 0, 3, etc.) */
+.main-content .card h4 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #52528C;
+  margin: 0;
+}
+
+/* Keep Bootstrap color accents */
+.main-content .card .text-secondary { color: #6c757d !important; }
+.main-content .card .text-primary { color: #52528C !important; }
+.main-content .card .text-success { color: #198754 !important; }
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .main-content .card {
+    padding: 20px 10px !important;
+  }
+}
+.topbar .btn-new {
+  margin-left: 10px;
+}
+/* Center specific table columns */
+.table td:nth-child(4),
+.table th:nth-child(4), /* Priority */
+.table td:nth-child(6),
+.table th:nth-child(6), /* Comments */
+.table td:nth-child(7),
+.table th:nth-child(7)  /* Actions */
+{
+  text-align: center;
+  vertical-align: middle;
+}
+/* ✅ Search box container */
+.search-box {
+  position: relative;
+  display: inline-block;
+}
+
+/* ✅ Curved input field */
+.search-box .form-control {
+  border-radius: 30px !important;
+  padding: 8px 40px 8px 38px; /* extra space for icon */
+  border: 1px solid #ccc;
+  transition: 0.3s;
+  font-size: 14px;
+  background-color: #fff;
+}
+
+.search-box .form-control:focus {
+  border-color: #3b3b63;
+  box-shadow: 0 0 6px rgba(60, 70, 181, 0.3);
+  outline: none;
+}
+
+/* ✅ Magnifying glass icon styling */
+.search-box .fa-magnifying-glass {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 16px;
+  pointer-events: none; /* prevents icon blocking input clicks */
+}
+/* ====== Add New Task Modal Styling ====== */
+
+/* Modal Header */
+#addTaskModal .modal-header {
+  background-color: #3b3b63;   /* same as Add Task button */
+  color: #fff;
+  border-bottom: none;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+/* Modal Title */
+#addTaskModal .modal-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Close button color */
+#addTaskModal .btn-close {
+  filter: invert(1); /* makes close button white */
+  opacity: 0.9;
+}
+#addTaskModal .btn-close:hover {
+  opacity: 1;
+}
+
+/* Modal Body Inputs */
+#addTaskModal .form-control,
+#addTaskModal select {
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  transition: 0.3s;
+}
+#addTaskModal .form-control:focus,
+#addTaskModal select:focus {
+  border-color: #3b3b63;
+  box-shadow: 0 0 5px rgba(59, 59, 99, 0.3);
+}
+
+/* Add Task Button inside Modal */
+#addTaskModal .btn-primary {
+  background-color: #3b3b63;
+  border: none;
+  border-radius: 8px;
+  width: 100%;
+  padding: 10px 0;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+#addTaskModal .btn-primary:hover {
+  background-color: #52528c;
+}

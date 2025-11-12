@@ -1,0 +1,54 @@
+/* Profile Modal */
+.profile-modal .modal-header {
+  background-color: #3b3b63;
+  color: #fff;
+  border-bottom: none;
+}
+
+.profile-modal .modal-body {
+  text-align: center;
+}
+
+.profile-modal img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.profile-modal .btn-primary {
+  background-color: #3b3b63;
+  border: none;
+}
+
+.profile-modal .btn-primary:hover {
+  background-color: #5a5a87;
+}
+
+.profile-modal .btn-secondary {
+  background-color: #e6e6f0;
+  border: none;
+  color: #3b3b63;
+}
+
+.profile-modal .btn-secondary:hover {
+  background-color: #d0d0eb;
+  color: #3b3b63;
+}
+
+/* Profile Details Modal */
+.profile-details .modal-header {
+  background-color: #3b3b63;
+  color: #fff;
+  border-bottom: none;
+}
+
+.profile-details .modal-body {
+  text-align: center;
+}
+
+.profile-details .modal-body p {
+  margin: 8px 0;
+  color: #3b3b63;
+  font-weight: 500;
+}

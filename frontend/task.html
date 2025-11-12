@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KavyaProman360 | Tasks</title>
+  <link rel="icon" type="image/x-icon" href="assests/img/fevicon.jpg">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assests/css/task.css" />
+
+  <!-- Bootstrap + FontAwesome -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+</head>
+
+<body>
+
+  <!-- Mobile menu toggle -->
+  <button class="mobile-menu-toggle" id="menuToggle">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div style="display: flex; justify-content: center; padding: 5px 0 15px 0; border-bottom: 1px solid #444;">
+      <img src="assests/img/kavyaProman360clear.png" alt="KavyaProman360 Logo" style="width: 200px; height: 50px; border-radius: 12px;">
+    </div>
+    <a href="dashboard.html"><i class="fa-solid fa-house me-2"></i>Home</a>
+    <a href="project.html"><i class="fa-solid fa-diagram-project me-2"></i>Projects</a>
+    <a href="task.html"><i class="fa-solid fa-list-check me-2"></i>Tasks</a>
+    <a href="calender.html"><i class="fa-solid fa-calendar-days me-2"></i>Calendar</a>
+    <a href="reports.html"><i class="fa-solid fa-chart-line me-2"></i>Reports</a>
+    <a href="setting.html"><i class="fa-solid fa-gear me-2"></i>Settings</a>
+    <hr style="border-color: #666" />
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <h3 class="m-0 fw-semibold">Tasks</h3>
+    <div class="d-flex align-items-center gap-3">
+        <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="searchInput" placeholder="Search tasks..." class="form-control" style="width:260px;">
+    </div>
+        <button class="btn btn-new" data-bs-toggle="modal" data-bs-target="#addTaskModal">+ New Task</button>
+    <button class="btn btn-new" data-bs-toggle="modal" data-bs-target="#profileModal"><i
+          class="fa-solid fa-user"></i></button>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div class="modal fade profile-modal" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Profile</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <img src="https://i.pravatar.cc/80" alt="User Avatar">
+          <h5 class="profile-user-name">User Name</h5>
+          <p class="text-muted profile-user-role">Role</p>
+          <button class="btn btn-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#profileDetailsModal"
+            data-bs-dismiss="modal"><i class="fa-solid fa-user me-2"></i>View Profile</button>
+          <button class="btn btn-secondary w-100" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket me-2"></i>Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Details Modal -->
+  <div class="modal fade profile-details" id="profileDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Profile Details</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <img src="https://i.pravatar.cc/100" alt="User Avatar">
+          <h5 class="profile-user-name">User Name</h5>
+          <p><strong>Role:</strong> <span class="profile-user-role">Role</span></p>
+          <p><strong>Email:</strong> <span class="profile-user-email">user@example.com</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main-content">
+    <!-- Stats -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card text-center p-3">
+          <h6>All Tasks</h6>
+          <h4 id="allCount" class="fw-bold mb-0">0</h4>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-3">
+          <h6>Pending</h6>
+          <h4 id="pendingCount" class="fw-bold mb-0 text-secondary">0</h4>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-3">
+          <h6>In Progress</h6>
+          <h4 id="progressCount" class="fw-bold mb-0 text-primary">0</h4>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-3">
+          <h6>Completed</h6>
+          <h4 id="completedCount" class="fw-bold mb-0 text-success">0</h4>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task list -->
+    <div class="card p-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-semibold m-0">Task List</h6>
+        <select id="statusFilter" class="form-select w-auto">
+          <option value="all">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Task</th>
+              <th>Assigned To</th>
+              <th>Due Date</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Comments</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="taskTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Add New Task Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px; overflow:hidden;">
+
+      <!-- Header -->
+      <div class="modal-header" style="background-color:#52528c; color:white; border:none;">
+        <h5 class="modal-title" id="addTaskModalLabel">Add New Task</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body" style="padding:20px;">
+        <form id="addTaskForm">
+
+          <!-- Task Title -->
+          <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Task Title</label>
+          <input type="text" id="taskTitle" name="title" class="form-control" placeholder="Enter task title" style="margin-bottom:15px;" required>
+
+          <!-- Description -->
+          <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Description</label>
+          <textarea id="taskDescription" name="description" class="form-control" placeholder="Enter task description" style="margin-bottom:15px;" rows="3"></textarea>
+
+          <!-- Assigned To -->
+          <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Assigned To</label>
+          <input type="text" id="taskAssignee" name="assignee" class="form-control" placeholder="Enter assignee name" style="margin-bottom:15px;">
+
+          <!-- Due Date -->
+          <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Due Date</label>
+          <input type="date" id="taskDueDate" name="dueDate" class="form-control" style="margin-bottom:15px;">
+
+          <!-- Priority -->
+          <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Priority</label>
+          <select id="taskPriority" name="priority" class="form-select" style="margin-bottom:15px;">
+            <option>Low</option>
+            <option selected>Medium</option>
+            <option>High</option>
+          </select>
+
+          <!-- Status -->
+          <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Status</label>
+          <select id="taskStatus" name="status" class="form-select" style="margin-bottom:20px;">
+            <option value="todo" selected>To Do</option>
+            <option value="in-progress">In Progress</option>
+            <option value="done">Done</option>
+          </select>
+
+          <!-- Add Button -->
+          <button type="submit" class="btn w-100" 
+                  style="background-color:#52528c; color:white; font-weight:500; border:none; border-radius:6px; padding:10px;">
+            Add Task
+          </button>
+        </form>
+      </div>
+    </div>
+    </div>
+    </div>
+
+
+  <!-- 🗨️ Comment Modal -->
+<div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+  <div class="modal-content">
+  <div class="modal-header text-white" style="background-color: #52528c;">
+    <h5 class="modal-title" id="commentModalLabel">Task Comments</h5>
+    <button 
+      type="button" 
+      class="btn-close" 
+      data-bs-dismiss="modal" 
+      aria-label="Close"
+      style="filter: invert(1) brightness(2); background-color: white; border-radius: 50%; padding: 5px;">
+    </button>
+  </div>
+  <div class="modal-body">
+    <div id="commentList" class="mb-3"></div>
+    <textarea id="newComment" class="form-control mb-3" rows="3" placeholder="Write your comment..."></textarea>
+    <button 
+      id="saveCommentBtn" 
+      class="btn w-100" 
+      style="background-color:#52528c; color: white; border: none;">
+      Save Comment
+    </button>
+  </div>
+</div>
+
+    </div>
+  </div>
+</div>
+
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assests/js/user-profile.js"></script>
+  <script src="assests/js/task-api.js"></script>
+  <script src="https://kit.fontawesome.com/48824742cf.js" crossorigin="anonymous"></script>
+</body>
+</html>

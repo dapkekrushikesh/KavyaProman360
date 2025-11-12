@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KavyaProman360 | Projects</title>
+  <link rel="icon" type="image/x-icon" href="assests/img/fevicon.jpg">
+  <link rel="stylesheet" href="assests/css/project.css" />
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <button class="mobile-menu-toggle">☰</button>
+  <div class="sidebar">
+    <div style="display: flex; justify-content: center; padding: 5px 0 15px 0; border-bottom: 1px solid #444;">
+      <img src="assests/img/kavyaProman360clear.png" alt="KavyaProman360 Logo" style="width: 200px; height: 50px; border-radius: 12px;">
+    </div>
+    <a href="dashboard.html"><i class="fa-solid fa-house me-2"></i>Home</a>
+    <a href="project.html" class="active"><i class="fa-solid fa-diagram-project me-2"></i>Projects</a>
+    <a href="task.html"><i class="fa-solid fa-list-check me-2"></i>Tasks</a>
+    <a href="calender.html"><i class="fa-solid fa-calendar-days me-2"></i>Calendar</a>
+
+    <a href="reports.html"><i class="fa-solid fa-chart-line me-2"></i>Reports</a>
+    <a href="setting.html"><i class="fa-solid fa-gear me-2"></i>Settings</a>
+    <hr style="border-color: #666" />
+  </div>
+
+  <div class="sidebar-overlay"></div>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <h3>Projects</h3>
+    <div class="d-flex align-items-center gap-2">
+      <div class="search-box">
+        <input type="text" placeholder="Search projects..." />
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </div>
+      <button class="btn btn-new" data-bs-toggle="modal" data-bs-target="#addProjectModal">
+        <i class="fa-solid fa-plus"></i> New Project
+      </button>
+      <button class="btn btn-new" data-bs-toggle="modal" data-bs-target="#profileModal">
+        <i class="fa-solid fa-user"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Project Cards Grid -->
+    <div class="row g-4" id="projectsGrid">
+      <!-- Project cards will be rendered here dynamically -->
+    </div>
+  </div>
+
+      <!-- Modal Header -->
+      <!-- <div class="modal-header"
+        style="background-color: red; color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px;">
+        <h3 id="projectTitle" style="margin: 0;">Project Title</h3>
+        <button class="close-btn" onclick="closeFileShareModal()"
+          style="background: none; border: none; color: white; font-size: 22px; cursor: pointer;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div> -->
+
+      <!-- Project Info Section -->
+      <!-- <div class="project-info-modal" style="padding: 15px;">
+
+        <div class="info-row" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+          <span class="icon"><i class="fa-solid fa-user"></i></span>
+          <span class="label" id="assigneeLabel">Assignee</span>
+          <span class="date" id="dateLabel"><i class="fa-solid fa-calendar-days"></i> Date</span>
+        </div>
+
+        <div class="info-row" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+          <span class="icon"><i class="fa-solid fa-tasks"></i></span>
+          <span class="label" id="tasksLabel">Tasks</span>
+          <span class="progress-text" id="progressLabel"><i class="fa-solid fa-clock"></i> Progress</span>
+        </div>
+
+        <div class="info-row" style="display: flex; justify-content: space-between;">
+          <span class="icon"><i class="fa-solid fa-paperclip"></i></span>
+          <span class="label" id="filesLabel">Files</span>
+          <span class="members" id="membersLabel"><i class="fa-solid fa-users"></i> Members</span>
+        </div>
+      </div>
+    </div>
+  </div> -->
+
+
+  <!-- <div class="modal-actions">
+    <button class="status-btn" id="statusBtn">Status</button>
+    <button class="cancel-btn" onclick="closeFileShareModal()">
+      Cancel
+    </button>
+    <button class="share-btn" onclick="openFileShare()">
+      Share Files
+    </button>
+  </div>
+  </div>
+  </div> -->
+
+  <!-- File Upload/Share Modal -->
+  <div id="fileUploadModal" class="modal-overlay">
+    <div class="modal-content file-upload-modal">
+      <div class="modal-header" style="background-color: #3b3b63; padding: 10px; margin: -10px; margin-bottom: 10px;">
+        <h3 style="color: #fcfcff;">Share Files - <span id="uploadProjectTitle">Project</span></h3>
+        <button class="close-btn" onclick="closeFileUploadModal()">
+          &times;
+        </button>
+      </div>
+
+      <div class="file-upload-area">
+        <div class="upload-zone" id="uploadZone">
+          <span class="upload-icon"><i class="fa-solid fa-file" style="color: #3b3b63;"></i></span>
+          <p>Drag & drop files here or click to browse</p>
+          <input type="file" id="fileInput" multiple accept="*/*" />
+        </div>
+
+        <div class="uploaded-files" id="uploadedFiles">
+          <!-- Uploaded files will appear here -->
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeFileUploadModal()">
+          Cancel
+        </button>
+        <button class="share-btn" onclick="shareFiles()">Share Files</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Project Modal -->
+  <div class="modal fade" id="addProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header text-white" style="background-color: #3b3b63">
+          <h5 class="modal-title">Add New Project</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="projectForm">
+            <div class="mb-3">
+              <label class="form-label">Project Name</label>
+              <input type="text" id="projectName" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Assignee Emails (comma separated)</label>
+              <input type="text" id="projectAssigneeEmails" class="form-control" placeholder="user1@email.com, user2@email.com" required />
+              <small class="text-muted">Enter one or more email addresses separated by commas. Users will be notified.</small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea id="projectDesc" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Assigned Date</label>
+              <input type="date" id="projectAssignedDate" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Deadline</label>
+              <input type="date" id="projectDeadline" class="form-control" />
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" id="saveProject" style="background-color: #3b3b63">
+            Save Project
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Project Modal -->
+  <div class="modal fade" id="editProjectModal" tabindex="-1" aria-labelledby="editProjectModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content" >
+        <div class="modal-header" style="background-color: #3b3b63; color: white;">
+          <h5 class="modal-title" id="editProjectModalLabel">Edit Project</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="color: white;"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editProjectForm">
+            <div class="mb-3">
+              <label class="form-label">Project Name</label>
+              <input type="text" class="form-control" id="editProjectName" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="editProjectDesc" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Assigned Date</label>
+              <input type="date" class="form-control" id="editProjectAssignedDate" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Due Date</label>
+              <input type="date" class="form-control" id="editProjectDueDate" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Status</label>
+              <select class="form-control" id="editProjectStatus">
+                <option>In Progress</option>
+                <option>Completed</option>
+                <option>Pending</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Members</label>
+              <small class="text-muted d-block mb-2">
+                <i class="fa-solid fa-info-circle me-1"></i>
+                Add members by entering their registered email addresses. They will be notified of the project assignment.
+              </small>
+              <div id="editProjectMembers" class="d-flex flex-wrap gap-2 mb-3 p-2" style="min-height: 40px; background-color: #f8f9fa; border-radius: 6px; border: 1px solid #e0e0e0;"></div>
+              <div class="input-group mt-2">
+                <input type="email" class="form-control" id="newMemberInput" placeholder="member@example.com" />
+                <button class="btn "  type="button" id="addMemberBtn" style="background-color: #3b3b63; color: white;">
+                  <i class="fa-solid fa-plus me-1"></i>Add
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button"  class="btn " data-bs-dismiss="modal" style="background-color: #3b3b63; color: white;">
+            Cancel
+          </button>
+          <button type="button" class="btn " id="saveProjectEditBtn" style="background-color: #3b3b63; color: white;">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div class="modal fade profile-modal" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Profile</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <img src="https://i.pravatar.cc/80" alt="User Avatar" />
+          <h5 class="profile-user-name">User Name</h5>
+          <p class="text-muted profile-user-role">Role</p>
+          <button class="btn btn-primary w-100 mb-2">
+            <i class="fa-solid fa-user me-2"></i>View Profile
+          </button>
+          <button class="btn btn-secondary w-100" onclick="logoutUser()">
+            <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assests/js/user-profile.js"></script>
+  <script src="assests/js/project-api.js"></script>
+  <script src="https://kit.fontawesome.com/48824742cf.js" crossorigin="anonymous"></script>
+</body>
+
+</html>

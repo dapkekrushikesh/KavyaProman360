@@ -1,0 +1,249 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  font-family: 'Poppins', sans-serif;
+  /* overflow: hidden; */
+  position: relative;
+}
+
+/* Background image + overlay */
+body {
+  background: url('../img/background\ 1.jpg') no-repeat center center fixed;
+  background-color: #ffffff;
+  background-size: cover;
+  height: 100vh;
+  width: 100vw;
+}
+
+.background-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(3, 1, 1, 0);
+  backdrop-filter: blur(1px);
+  z-index: 0;
+}
+
+/* Container */
+.login-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 900px;
+  height: 550px;
+  border-radius: 20px;
+  box-shadow: 0px 25px 40px rgba(0.35, 0.35, 0.35, 0.35);
+  overflow: hidden;
+  background: #ffffffcc; /* Slightly transparent white */
+  margin: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.text-logo {
+  font-family: 'Open Sans', sans-serif; 
+  font-weight: bold;
+  font-size: 45px;
+  color: #f7f6f5; /* your brand color */
+  /* add more styling as needed */
+}
+
+
+/* Left panel */
+.left-panel {
+  flex: 1;
+  /* background: linear-gradient(90deg,  #4a4655ab, #ffffff00);   */
+  background-color: #1e1e2d;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.left-panel img {
+  max-width: 280px;
+  margin-bottom: 30px;
+  filter: drop-shadow(0px 5px 10px rgba(0, 0, 0, 0.15));
+}
+
+.left-panel h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #ffffff;
+}
+
+.left-panel p {
+  font-size: 18px;
+  font-weight: 400;
+  opacity: 0.85;
+  max-width: 280px;
+  line-height: 1.4;
+  color: #ffffff;
+}
+
+/* Right panel */
+.right-panel {
+  flex: 1;
+  padding: 60px 50px 60px 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* background: #fff; */
+/* background: linear-gradient(270deg, #1e1e2d, #ffffff00); */
+}
+
+.right-panel h1 {
+  font-size: 28px;
+  color: #333333;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: #777777;
+  margin-bottom: 40px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.signup-text {
+  margin-top: 15px; 
+  font-size: 14px;
+  color: #000000;
+  text-align: center;
+}
+
+.signup-text a {
+  color: #1e1e2d;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.signup-text a:hover {
+  text-decoration: underline;
+}
+
+
+/* Form */
+form {
+  width: 100%;
+}
+
+.input-group {
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #444444;
+  font-size: 16px;
+}
+
+input[type="email"],
+input[type="password"] {
+  padding: 14px 18px;
+  font-size: 16px;
+  border-radius: 12px;
+  border: 1.8px solid #dddddd;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus {
+  border-color: #6e72fc;
+  outline: none;
+  box-shadow: 0 0 10px rgba(110, 114, 252, 0.4);
+}
+
+
+.error-message {
+  color: red;
+  font-size: 0.9em;
+  margin-top: 5px;
+}
+
+/* Button */
+.btn-login {
+  width: 100%;
+  padding: 16px 0px;
+  /* background: linear-gradient(135deg, #6e72fc, #ad1deb); */
+  background-color:#4b4a9c;
+  /* background: linear-gradient(135deg, #000000, #9a1dcc); */
+  border: none;
+  border-radius: 14px;
+  color: rgb(0, 0, 0);
+  font-weight: 700;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.4s ease;
+  box-shadow: 0px 8px 15px rgba(110, 114, 252, 0.3);
+}
+
+.btn-login:hover {
+  /* background: linear-gradient(135deg, #000000, #54ec0d); */
+  background: #ffb400 !important;
+  color: #100f57;
+  box-shadow: 0px 10px 20px rgba(90, 96, 229, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .login-container {
+    width: 90vw;           
+    max-width: 400px;      
+    height: auto;         
+    flex-direction: column;
+    border-radius: 20px;   
+    margin: 40px auto;    
+    top: auto;           
+    transform: none;      
+    box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.2); 
+  }
+
+  .left-panel, .right-panel {
+    padding: 30px 20px;
+  }
+
+  .left-panel img {
+    max-width: 200px; 
+    margin-bottom: 20px;
+  }
+
+  .left-panel h2 {
+    font-size: 24px;
+  }
+
+  .left-panel p {
+    font-size: 16px;
+    max-width: 100%;
+  }
+
+  .right-panel h1 {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    margin-bottom: 30px;
+  }
+
+  .btn-login {
+    font-size: 18px;
+    padding: 14px 0;
+  }
+}

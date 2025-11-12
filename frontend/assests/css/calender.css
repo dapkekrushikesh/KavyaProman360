@@ -1,0 +1,239 @@
+body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(to right, #f6f7fb, #f3f4f9);
+      overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: linear-gradient(180deg, #3b3b63, #52528c);
+      color: #fff;
+      min-height: 100vh;
+      padding-top: 30px;
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 220px;
+      box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar h4 {
+      color: #f3f3f3;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .sidebar a {
+      color: #e4e4e9;
+      display: block;
+      padding: 12px 20px;
+      text-decoration: none;
+      transition: 0.3s;
+      font-size: 15px;
+      border-left: 4px solid transparent;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-left: 4px solid #f7f7f9;
+      padding-left: 25px;
+    }
+
+    /* Topbar */
+    .topbar {
+      background-color: #fff;
+      padding: 15px 25px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-left: 220px;
+      border-radius: 0 0 15px 15px;
+    }
+
+   .topbar h3 {
+      font-weight: 600;
+      color: #3b3b63;
+      margin: 0;
+    }
+
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      border-radius: 25px;
+      border: 1px solid #ccc;
+      padding: 6px 15px;
+      padding-right: 38px; /* space for icon */
+      width: 250px;
+      transition: 0.3s;
+    }
+
+    .search-box input:focus {
+      border-color: #3b3b63;
+      outline: none;
+      box-shadow: 0 0 5px rgba(60, 70, 181, 0.5);
+    }
+
+    .search-box .fa-search,
+    .search-box .fa-magnifying-glass {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #b0b0b0;
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+     
+    /* Calendar Container */
+    .calendar-container {
+      background-color: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      padding: 30px;
+      max-width: 1000px;
+      margin: 30px auto 50px auto;
+      margin-left: 250px;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .calendar-header h3 {
+      font-weight: 600;
+      color: #3b3b63;
+    }
+
+    .calendar-header button {
+      background-color: #3b3b63;
+      border: none;
+      color: #fff;
+      padding: 8px 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .calendar-header button:hover {
+      background-color: #3b3b63;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      text-align: center;
+    }
+
+    .day-name {
+      font-weight: 600;
+      color: #3b3b63;
+    }
+
+    .day {
+      padding: 15px;
+      border-radius: 10px;
+      background-color: #f9fafc;
+      transition: all 0.3s;
+      cursor: pointer;
+      position: relative;
+      min-height: 100px;
+    }
+
+    .day:hover {
+      background-color: #3b3b63;
+      color: #fff;
+      transform: scale(1.05);
+    }
+
+    .event {
+      background-color: #ffb400;
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: block;
+      margin-top: 4px;
+    }
+
+    /* Profile Modal */
+.profile-modal .modal-header {
+  background-color: #3b3b63;
+  color: #fff;
+  border-bottom: none;
+}
+
+.profile-modal .modal-body {
+  text-align: center;
+}
+
+.profile-modal img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.profile-modal .btn-primary {
+  background-color: #3b3b63;
+  border: none;
+}
+
+.profile-modal .btn-primary:hover {
+  background-color: #5a5a87;
+}
+
+.profile-modal .btn-secondary {
+  background-color: #e6e6f0;
+  border: none;
+  color: #3b3b63;
+}
+
+.profile-modal .btn-secondary:hover {
+  background-color: #d0d0eb;
+  color: #3b3b63;
+}
+
+/* Profile Details Modal */
+.profile-details .modal-header {
+  background-color: #3b3b63;
+  color: #fff;
+  border-bottom: none;
+}
+
+.profile-details .modal-body {
+  text-align: center;
+}
+
+.profile-details .modal-body p {
+  margin: 8px 0;
+  color: #3b3b63;
+  font-weight: 500;
+}
+
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+      .calendar-container {
+        margin-left: 15px;
+        margin-right: 15px;
+      }
+      .calendar-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .day {
+        min-height: 80px;
+      }
+    }
