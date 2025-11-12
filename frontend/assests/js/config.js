@@ -1,9 +1,9 @@
 // API Configuration
-// Update the BASE_URL with your actual Render backend URL
+// Backend URL for Render deployment
 
 const API_CONFIG = {
-  // Production (Render) - Update this with your actual backend URL
-  BASE_URL: 'https://kavyaproman360-backend.onrender.com',
+  // Production (Render) - Your actual backend URL
+  BASE_URL: 'https://kavyaproman-backend.onrender.com',
   
   // For local development, uncomment this line and comment the line above:
   // BASE_URL: 'http://localhost:3000',

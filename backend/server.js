@@ -17,7 +17,6 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:8080',
     'https://kavyaproman360.onrender.com',
-    'https://kavyaproman360-frontend.onrender.com',
     process.env.FRONTEND_URL
   ].filter(Boolean), // Remove undefined values
   credentials: true

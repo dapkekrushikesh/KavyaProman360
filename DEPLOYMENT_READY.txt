@@ -1,0 +1,115 @@
+========================================
+✅ KAVYAPROMAN360 - RENDER CONFIGURATION
+========================================
+
+Frontend URL: https://kavyaproman360.onrender.com
+Backend URL:  https://kavyaproman-backend.onrender.com
+
+========================================
+✅ WHAT I'VE FIXED FOR YOU:
+========================================
+
+1. ✅ Updated frontend/assests/js/config.js
+   - Set BASE_URL to: https://kavyaproman-backend.onrender.com
+
+2. ✅ Updated backend/server.js
+   - Added CORS for: https://kavyaproman360.onrender.com
+
+3. ✅ Updated frontend/assests/js/script.js
+   - Login and signup now use backend URL from config
+
+4. ✅ Added config.js to ALL HTML pages:
+   - index.html ✅
+   - signup.html ✅
+   - dashboard.html ✅
+   - project.html ✅
+   - task.html ✅
+   - calender.html ✅
+   - reports.html ✅
+   - setting.html ✅
+   - project-details.html ✅
+
+========================================
+🚀 NEXT STEPS:
+========================================
+
+1. COMMIT AND PUSH:
+   git add .
+   git commit -m "Fix API URLs for Render deployment"
+   git push origin main
+
+2. WAIT FOR RENDER TO REDEPLOY:
+   - Frontend: ~2 minutes
+   - Backend: ~5 minutes
+   
+   Check deployment status at:
+   https://render.com/dashboard
+
+3. UPDATE BACKEND ENV VARIABLES (if not done):
+   Go to Render backend service → Environment
+   Add/Update:
+   FRONTEND_URL=https://kavyaproman360.onrender.com
+
+4. TEST YOUR APP:
+   Go to: https://kavyaproman360.onrender.com
+   Try logging in with:
+   - Email: admin@kavuproman.com (or your test user)
+   - Password: your password
+
+========================================
+🔍 TROUBLESHOOTING:
+========================================
+
+If login still doesn't work:
+
+1. Check Backend Logs:
+   - Go to Render dashboard
+   - Click backend service
+   - Check "Logs" tab for errors
+
+2. Check Frontend Console:
+   - Open https://kavyaproman360.onrender.com
+   - Press F12
+   - Check Console tab for errors
+
+3. Verify Backend is Running:
+   - Visit: https://kavyaproman-backend.onrender.com/health
+   - Should see: {"status":"OK","message":"Server is running"...}
+
+4. Check CORS:
+   - If you see CORS errors in console
+   - Verify FRONTEND_URL in Render backend environment variables
+
+5. MongoDB Connection:
+   - Check Render backend logs for MongoDB errors
+   - Verify MongoDB Atlas Network Access allows all IPs (0.0.0.0/0)
+
+========================================
+📝 BACKEND ENVIRONMENT VARIABLES:
+========================================
+
+Make sure these are set in Render (Backend Service → Environment):
+
+NODE_ENV=production
+PORT=3000
+MONGO_URI=mongodb+srv://dapkekrushikesh:Rushi12345@kavuproman.9c3k9ia.mongodb.net/?appName=KavuProman
+JWT_SECRET=your_jwt_secret_here
+JWT_EXPIRES_IN=7d
+UPLOAD_DIR=uploads
+BREVO_API_KEY=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
+BREVO_FROM_EMAIL=dapkekrushikesh@gmail.com
+FRONTEND_URL=https://kavyaproman360.onrender.com
+
+========================================
+✨ YOU'RE READY TO DEPLOY!
+========================================
+
+Just run these commands:
+
+git add .
+git commit -m "Configure for Render deployment"
+git push origin main
+
+Then wait 5-7 minutes and your app will be live! 🎉
+
+========================================
