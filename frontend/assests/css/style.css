@@ -360,6 +360,20 @@ input[type="password"]:focus {
   text-decoration: underline;
 }
  
+.forgot-password {
+  text-align: right;
+  margin: 10px 130px 15px;
+}
+ 
+.forgot-password a {
+  color: #021730;
+  text-decoration: none;
+  font-size: 14px;
+}
+ 
+.forgot-password a:hover {
+  text-decoration: underline;
+}
 /* ------------------------------
    Responsive Design
 ------------------------------ */

@@ -25,8 +25,12 @@ Thumbs.db
 desktop.ini
 
 # Uploads and user-generated content
-backend/uploads/
-uploads/
+backend/uploads/*
+uploads/*
+# But keep the directory structure
+!backend/uploads/.gitkeep
+!backend/uploads/avatars/
+!backend/uploads/avatars/.gitkeep
 
 # Test coverage
 coverage/

@@ -198,7 +198,92 @@ async function sendEventNotificationMail(to, userName, eventDetails) {
   }
 }
 
+// Send password reset email
+async function sendPasswordResetMail(to, userName, resetUrl, resetToken) {
+  try {
+    const emailData = {
+      sender: {
+        email: process.env.BREVO_FROM_EMAIL,
+        name: 'KavyaProman360'
+      },
+      to: [{ email: to }],
+      subject: '🔐 Password Reset Request',
+      htmlContent: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f7; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #3b3b63 0%, #52528c 100%); color: white; padding: 30px 20px; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+            .content { padding: 30px 20px; }
+            .warning-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 6px; }
+            .cta-button { display: inline-block; background: linear-gradient(135deg, #3b3b63 0%, #52528c 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; text-align: center; }
+            .token-box { background-color: #f8f9fa; padding: 15px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 16px; word-break: break-all; margin: 15px 0; }
+            .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Password Reset Request</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Reset your account password</p>
+            </div>
+            <div class="content">
+              <p style="font-size: 16px; color: #495057; margin-top: 0;">Hello ${userName || 'there'},</p>
+              <p style="font-size: 16px; color: #495057;">We received a request to reset your password for your KavyaProman360 account.</p>
+              
+              <div class="warning-box">
+                <strong>⚠️ Important:</strong> This link will expire in <strong>10 minutes</strong> for security reasons.
+              </div>
+
+              <p style="font-size: 16px; color: #495057;">Click the button below to reset your password:</p>
+
+              <div style="text-align: center;">
+                <a href="${resetUrl}" class="cta-button">Reset Password</a>
+              </div>
+
+              <p style="font-size: 14px; color: #6c757d; margin-top: 20px;">
+                Or copy and paste this link in your browser:
+              </p>
+              <div class="token-box">
+                ${resetUrl}
+              </div>
+
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                <p style="font-size: 14px; color: #6c757d;">
+                  <strong>Didn't request this?</strong> You can safely ignore this email. Your password will not be changed.
+                </p>
+              </div>
+            </div>
+            <div class="footer">
+              <p style="margin: 5px 0;">© 2025 KavyaProman360. All rights reserved.</p>
+              <p style="margin: 5px 0; font-size: 12px;">This is an automated email, please do not reply.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log(`✅ Password reset email sent to ${to}`);
+    return { success: true, messageId: response.data.messageId };
+  } catch (error) {
+    console.error(`❌ Error sending password reset email to ${to}:`, error.response?.data || error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   sendProjectAssignmentMail,
-  sendEventNotificationMail
+  sendEventNotificationMail,
+  sendPasswordResetMail
 };

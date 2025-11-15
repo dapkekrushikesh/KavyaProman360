@@ -5,6 +5,9 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, default: 'user' },
+  avatar: { type: String, default: null }, // URL or path to avatar image
+  resetPasswordToken: { type: String },
+  resetPasswordExpire: { type: Date },
   createdAt: { type: Date, default: Date.now }
 });
 

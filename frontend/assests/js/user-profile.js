@@ -44,6 +44,20 @@ async function loadUserProfile() {
       el.textContent = user.email;
     });
 
+    // Update avatar images
+    const avatarElements = document.querySelectorAll('img[alt="User Avatar"]');
+    if (user.avatar) {
+      const avatarUrl = `${API_URL}${user.avatar}`;
+      avatarElements.forEach(el => {
+        el.src = avatarUrl;
+      });
+    } else {
+      // Use default avatar if none is set
+      avatarElements.forEach(el => {
+        el.src = 'assests/img/profileavatar.png';
+      });
+    }
+
     // Store user data in sessionStorage for quick access
     sessionStorage.setItem('currentUser', JSON.stringify(user));
 

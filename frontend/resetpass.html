@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KavyaProman360 | Reset Password</title>
+    <link rel="icon" type="image/x-icon" href="assests/img/fevicon.jpg">
+
+    <style>
+        body {
+            font-family: "Poppins", sans-serif;
+            background: url('assests/img/background\ 1.jpg') no-repeat center center fixed;
+            background-color: #ffffff;
+            background-size: cover;
+            margin: 0;
+        }
+
+        .reset-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 95vh;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .reset-box {
+            background: #fff;
+            padding: 40px;
+            width: 400px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            background: rgba(255, 255, 255, 0.699);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .reset-box h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .input-group input {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            outline: none;
+            transition: 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus {
+            border-color: #105099;
+        }
+
+        .input-error {
+            border: 1px solid red !important;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 13px;
+            margin-top: 4px;
+            min-height: 16px;
+        }
+
+        .success-message {
+            color: green;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+
+        .password-requirements {
+            background-color: #f0f8ff;
+            border-left: 3px solid #105099;
+            padding: 10px 15px;
+            margin: 15px 0;
+            text-align: left;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+
+        .password-requirements ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .password-requirements li {
+            margin: 3px 0;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: #105099;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
+
+        .btn-submit:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .back-login {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .back-login a {
+            color: #093464;
+            text-decoration: none;
+        }
+
+        .back-login a:hover {
+            text-decoration: underline;
+        }
+
+        .show-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+        }
+
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="reset-container">
+        <div class="reset-box">
+            <h2>🔐 Reset Password</h2>
+            <p class="subtitle">Enter your new password below</p>
+
+            <div id="message-area"></div>
+
+            <form id="resetForm">
+                <div class="password-requirements">
+                    <strong>Password must contain:</strong>
+                    <ul>
+                        <li>At least 6 characters</li>
+                        <li>One uppercase letter</li>
+                        <li>One number</li>
+                    </ul>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">New Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" placeholder="Enter new password" />
+                    </div>
+                    <div class="error-message" id="password-error"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirmPassword" placeholder="Confirm new password" />
+                    </div>
+                    <div class="error-message" id="confirm-error"></div>
+                </div>
+
+                <button type="submit" class="btn-submit">Reset Password</button>
+            </form>
+
+            <p class="back-login"><a href="index.html">Back to Login</a></p>
+        </div>
+    </div>
+
+    <script src="assests/js/config.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("resetForm");
+            const passwordInput = document.getElementById("password");
+            const confirmPasswordInput = document.getElementById("confirmPassword");
+            const passwordError = document.getElementById("password-error");
+            const confirmError = document.getElementById("confirm-error");
+            const messageArea = document.getElementById("message-area");
+            const submitBtn = form.querySelector('.btn-submit');
+
+            // Get token from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            if (!token) {
+                messageArea.innerHTML = '<div class="error-message">❌ Invalid or missing reset token. Please request a new password reset link.</div>';
+                form.style.display = 'none';
+                return;
+            }
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                // Reset previous errors
+                passwordError.textContent = "";
+                confirmError.textContent = "";
+                messageArea.innerHTML = "";
+                passwordInput.classList.remove("input-error");
+                confirmPasswordInput.classList.remove("input-error");
+
+                const password = passwordInput.value.trim();
+                const confirmPassword = confirmPasswordInput.value.trim();
+
+                let isValid = true;
+
+                // Password validation
+                if (!password) {
+                    passwordError.textContent = "Password is required.";
+                    passwordInput.classList.add("input-error");
+                    isValid = false;
+                } else if (password.length < 6) {
+                    passwordError.textContent = "Password must be at least 6 characters.";
+                    passwordInput.classList.add("input-error");
+                    isValid = false;
+                } else if (!/[A-Z]/.test(password)) {
+                    passwordError.textContent = "Password must contain at least one uppercase letter.";
+                    passwordInput.classList.add("input-error");
+                    isValid = false;
+                } else if (!/\d/.test(password)) {
+                    passwordError.textContent = "Password must contain at least one number.";
+                    passwordInput.classList.add("input-error");
+                    isValid = false;
+                }
+
+                // Confirm password validation
+                if (!confirmPassword) {
+                    confirmError.textContent = "Please confirm your password.";
+                    confirmPasswordInput.classList.add("input-error");
+                    isValid = false;
+                } else if (password !== confirmPassword) {
+                    confirmError.textContent = "Passwords do not match.";
+                    confirmPasswordInput.classList.add("input-error");
+                    isValid = false;
+                }
+
+                if (isValid) {
+                    // Disable button and show loading
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Resetting...';
+
+                    try {
+                        const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman-backend.onrender.com';
+                        const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ token, password })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            messageArea.innerHTML = '<div class="success-message">✅ ' + (data.message || 'Password reset successful!') + '</div>';
+                            form.reset();
+                            
+                            // Redirect to login after 3 seconds
+                            setTimeout(() => {
+                                window.location.href = 'index.html';
+                            }, 3000);
+                        } else {
+                            messageArea.innerHTML = '<div class="error-message">❌ ' + (data.message || 'Failed to reset password.') + '</div>';
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Reset Password';
+                        }
+                    } catch (error) {
+                        messageArea.innerHTML = '<div class="error-message">❌ Server error. Please try again later.</div>';
+                        console.error('Reset password error:', error);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Reset Password';
+                    }
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>
