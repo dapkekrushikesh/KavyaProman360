@@ -295,18 +295,18 @@ async function saveEvent() {
 function viewEventDetails(event) {
   const projectName = event.project?.title || 'General';
   const details = `
-📅 ${event.title}
+${event.title}
 
-📋 Description: ${event.description || 'No description'}
-📁 Project: ${projectName}
-⏰ Time: ${event.time || 'All day'}
-📆 Date: ${new Date(event.date).toLocaleDateString('en-US', { 
+Description: ${event.description || 'No description'}
+Project: ${projectName}
+Time: ${event.time || 'All day'}
+Date: ${new Date(event.date).toLocaleDateString('en-US', { 
     weekday: 'long', 
     year: 'numeric', 
     month: 'long', 
     day: 'numeric' 
   })}
-👤 Created by: ${event.createdBy?.name || event.createdBy?.email || 'Unknown'}
+Created by: ${event.createdBy?.name || event.createdBy?.email || 'Unknown'}
   `;
   
   alert(details);
@@ -352,23 +352,24 @@ function viewAllEvents(dateStr, dayEvents) {
         <div class="d-flex justify-content-between align-items-start">
           <div style="flex: 1;">
             <h6 class="card-title mb-2">
+              <i class="fa-solid fa-calendar-check me-2" style="color:#3b3b63;"></i>
               ${event.title}
             </h6>
             ${event.description ? `<p class="card-text text-muted mb-2"><small>${event.description}</small></p>` : ''}
             <div class="d-flex flex-wrap gap-3 mt-2">
               <span class="badge bg-secondary">
-                ${event.time || 'All day'}
+                <i class="fa-solid fa-clock me-1"></i>${event.time || 'All day'}
               </span>
               <span class="badge bg-info">
-                ${projectName}
+                <i class="fa-solid fa-folder me-1"></i>${projectName}
               </span>
               <span class="badge bg-light text-dark">
-                ${creatorName}
+                <i class="fa-solid fa-user me-1"></i>${creatorName}
               </span>
             </div>
           </div>
           <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteEvent('${event._id}')" title="Delete event">
-            Delete
+            <i class="fa-solid fa-trash"></i>
           </button>
         </div>
       </div>
