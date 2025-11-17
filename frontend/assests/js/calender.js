@@ -352,24 +352,23 @@ function viewAllEvents(dateStr, dayEvents) {
         <div class="d-flex justify-content-between align-items-start">
           <div style="flex: 1;">
             <h6 class="card-title mb-2">
-              <i class="fa-solid fa-calendar-check me-2" style="color:#3b3b63;"></i>
               ${event.title}
             </h6>
             ${event.description ? `<p class="card-text text-muted mb-2"><small>${event.description}</small></p>` : ''}
             <div class="d-flex flex-wrap gap-3 mt-2">
               <span class="badge bg-secondary">
-                <i class="fa-solid fa-clock me-1"></i>${event.time || 'All day'}
+                ${event.time || 'All day'}
               </span>
               <span class="badge bg-info">
-                <i class="fa-solid fa-folder me-1"></i>${projectName}
+                ${projectName}
               </span>
               <span class="badge bg-light text-dark">
-                <i class="fa-solid fa-user me-1"></i>${creatorName}
+                ${creatorName}
               </span>
             </div>
           </div>
           <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteEvent('${event._id}')" title="Delete event">
-            <i class="fa-solid fa-trash"></i>
+            Delete
           </button>
         </div>
       </div>
