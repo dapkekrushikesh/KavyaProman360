@@ -263,12 +263,30 @@
           <img src="assests/img/profileavatar.png" alt="User Avatar" style="width: 20%;" />
           <h5 class="profile-user-name">User Name</h5>
           <p class="text-muted profile-user-role">Role</p>
-          <button class="btn btn-primary w-100 mb-2">
+          <button class="btn btn-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#profileDetailsModal" data-bs-dismiss="modal">
             <i class="fa-solid fa-user me-2"></i>View Profile
           </button>
           <button class="btn btn-secondary w-100" onclick="logoutUser()">
             <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Details Modal -->
+  <div class="modal fade profile-details" id="profileDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Profile Details</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <img src="assests/img/profileavatar.png" alt="User Avatar" style="width: 20%;" />
+          <h5 class="profile-user-name">User Name</h5>
+          <p><strong>Role:</strong> <span class="profile-user-role">Role</span></p>
+          <p><strong>Email:</strong> <span class="profile-user-email">user@example.com</span></p>
         </div>
       </div>
     </div>
