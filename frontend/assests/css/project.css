@@ -561,9 +561,9 @@ body {
 .btn-share{
   background-color: #3b3b63!important;
 }
-.modal-content{
+/* .modal-content{
   padding: 10px;
-}
+} */
 
 .action-btn:hover {
   background-color: #2980b9;
