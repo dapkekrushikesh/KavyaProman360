@@ -282,8 +282,90 @@ async function sendPasswordResetMail(to, userName, resetUrl, resetToken) {
   }
 }
 
+// Send OTP email for login verification
+async function sendOTPMail(to, userName, otp) {
+  try {
+    const emailData = {
+      sender: {
+        email: process.env.BREVO_FROM_EMAIL,
+        name: 'KavyaProman360'
+      },
+      to: [{ email: to }],
+      subject: '🔐 Your Login OTP Code',
+      htmlContent: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f7; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #3b3b63 0%, #52528c 100%); color: white; padding: 30px 20px; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+            .content { padding: 30px 20px; }
+            .otp-box { background-color: #f8f9fa; border: 2px dashed #52528c; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; }
+            .otp-code { font-size: 36px; font-weight: 700; color: #3b3b63; letter-spacing: 8px; font-family: 'Courier New', monospace; }
+            .warning-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 6px; }
+            .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Login Verification</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Your One-Time Password</p>
+            </div>
+            <div class="content">
+              <p style="font-size: 16px; color: #495057; margin-top: 0;">Hello ${userName || 'there'},</p>
+              <p style="font-size: 16px; color: #495057;">You requested to login to your KavyaProman360 account. Please use the following OTP to complete your login:</p>
+              
+              <div class="otp-box">
+                <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">Your OTP Code</p>
+                <div class="otp-code">${otp}</div>
+              </div>
+
+              <div class="warning-box">
+                <strong>⚠️ Important:</strong> This OTP will expire in <strong>5 minutes</strong> for security reasons.
+              </div>
+
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                <p style="font-size: 14px; color: #6c757d;">
+                  <strong>Security Tips:</strong>
+                </p>
+                <ul style="font-size: 14px; color: #6c757d; padding-left: 20px;">
+                  <li>Never share this OTP with anyone</li>
+                  <li>KavyaProman360 will never ask for your OTP via phone or email</li>
+                  <li>If you didn't request this OTP, please ignore this email</li>
+                </ul>
+              </div>
+            </div>
+            <div class="footer">
+              <p style="margin: 5px 0;">© 2025 KavyaProman360. All rights reserved.</p>
+              <p style="margin: 5px 0; font-size: 12px;">This is an automated email, please do not reply.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log(`✅ OTP email sent to ${to}`);
+    return { success: true, messageId: response.data.messageId };
+  } catch (error) {
+    console.error(`❌ Error sending OTP email to ${to}:`, error.response?.data || error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   sendProjectAssignmentMail,
   sendEventNotificationMail,
-  sendPasswordResetMail
+  sendPasswordResetMail,
+  sendOTPMail
 };

@@ -7,8 +7,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const User = require('../models/User');
+const OTP = require('../models/OTP');
 const auth = require('../middleware/auth');
-const { sendPasswordResetMail } = require('../utils/mailer-brevo');
+const { sendPasswordResetMail, sendOTPMail } = require('../utils/mailer-brevo');
 
 // Configure multer for avatar upload
 const storage = multer.diskStorage({
@@ -65,6 +66,105 @@ router.post('/signup', async (req, res) => {
     res.json({ user: { id: user._id, email: user.email, name: user.name, role: user.role, avatar: user.avatar }, token });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/auth/request-otp - Request OTP for login
+router.post('/request-otp', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password required' });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Delete any existing OTPs for this email
+    await OTP.deleteMany({ email: email.toLowerCase() });
+
+    // Save new OTP to database
+    await OTP.create({
+      email: email.toLowerCase(),
+      otp: otp
+    });
+
+    // Send OTP via email
+    await sendOTPMail(email, user.name, otp);
+
+    res.json({ 
+      message: 'OTP sent to your email. Please check your inbox.',
+      email: email 
+    });
+  } catch (err) {
+    console.error('Error in request-otp:', err);
+    res.status(500).json({ message: 'Failed to send OTP. Please try again.' });
+  }
+});
+
+// POST /api/auth/verify-otp - Verify OTP and complete login
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    // Validate input
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and OTP required' });
+    }
+
+    // Find OTP in database
+    const otpRecord = await OTP.findOne({ 
+      email: email.toLowerCase(),
+      otp: otp 
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // OTP is valid, find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+
+    // Delete used OTP
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id }, 
+      process.env.JWT_SECRET || 'secret', 
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    res.json({ 
+      user: { 
+        id: user._id, 
+        email: user.email, 
+        name: user.name, 
+        role: user.role, 
+        avatar: user.avatar 
+      }, 
+      token 
+    });
+  } catch (err) {
+    console.error('Error in verify-otp:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
