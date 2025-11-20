@@ -9,7 +9,29 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
   await loadProjectDetails(projectId);
   await loadProjectTasks(projectId);
+  hideNewTaskButtonForTeamMembers();
 });
+
+function hideNewTaskButtonForTeamMembers() {
+  // Get current user from sessionStorage
+  const currentUserData = sessionStorage.getItem('currentUser');
+  if (currentUserData) {
+    try {
+      const user = JSON.parse(currentUserData);
+      const userRole = user.role;
+      
+      // Hide "New Task" button for Team Members
+      if (userRole === 'Team Member') {
+        const newTaskBtn = document.querySelector('.btn[data-bs-target="#addTaskModal"]');
+        if (newTaskBtn) {
+          newTaskBtn.style.display = 'none';
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+    }
+  }
+}
 
 async function loadProjectDetails(projectId) {
   const token = localStorage.getItem('token');
@@ -52,10 +74,14 @@ async function loadProjectDetails(projectId) {
     
     // Update all detail items
     const detailItems = document.querySelectorAll('.detail-item span');
-    if (detailItems.length >= 5) {
+    if (detailItems.length >= 6) {
       // Members count
       const membersCount = project.members ? project.members.length : 0;
       detailItems[0].textContent = `${membersCount} Member${membersCount !== 1 ? 's' : ''}`;
+      
+      // Created by
+      const createdBy = project.createdBy ? project.createdBy.name || project.createdBy.email : 'Unknown';
+      detailItems[1].textContent = `Created by: ${createdBy}`;
       
       // Assigned date (start date)
       const assignedDate = project.startDate ? new Date(project.startDate).toLocaleDateString('en-US', {
@@ -67,7 +93,7 @@ async function loadProjectDetails(projectId) {
         month: 'short',
         day: 'numeric'
       });
-      detailItems[1].textContent = `Assigned: ${assignedDate}`;
+      detailItems[2].textContent = `Assigned: ${assignedDate}`;
       
       // Due date (end date)
       const dueDate = project.endDate ? new Date(project.endDate).toLocaleDateString('en-US', {
@@ -75,13 +101,13 @@ async function loadProjectDetails(projectId) {
         month: 'short',
         day: 'numeric'
       }) : 'No deadline';
-      detailItems[2].textContent = `Due: ${dueDate}`;
+      detailItems[3].textContent = `Due: ${dueDate}`;
       
       // Task count
-      detailItems[3].textContent = `${totalTasks} Task${totalTasks !== 1 ? 's' : ''}`;
+      detailItems[4].textContent = `${totalTasks} Task${totalTasks !== 1 ? 's' : ''}`;
       
       // Completion percentage
-      detailItems[4].textContent = `${completionPercentage}% Complete`;
+      detailItems[5].textContent = `${completionPercentage}% Complete`;
     }
     
     console.log('Project loaded:', project);

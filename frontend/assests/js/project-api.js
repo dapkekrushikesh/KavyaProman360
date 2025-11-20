@@ -14,7 +14,29 @@ document.addEventListener('DOMContentLoaded', function() {
   initializePage();
   setupEventListeners();
   loadProjectsFromBackend();
+  hideNewProjectButtonForTeamMembers();
 });
+
+function hideNewProjectButtonForTeamMembers() {
+  // Get current user from sessionStorage
+  const currentUserData = sessionStorage.getItem('currentUser');
+  if (currentUserData) {
+    try {
+      const user = JSON.parse(currentUserData);
+      const userRole = user.role;
+      
+      // Hide "New Project" button for Team Members
+      if (userRole === 'Team Member') {
+        const newProjectBtn = document.querySelector('.btn-new[data-bs-target="#addProjectModal"]');
+        if (newProjectBtn) {
+          newProjectBtn.style.display = 'none';
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+    }
+  }
+}
 
 function initializePage() {
   const mobileToggle = document.querySelector('.mobile-menu-toggle');
@@ -194,6 +216,11 @@ function createProjectCard(project) {
           <div class="mb-3" style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px; cursor: pointer;" onclick="viewProject('${project._id}')">
             <i class="fa-solid fa-user" style="font-size: 12px;"></i>
             <span>${memberCount > 0 ? memberCount + ' ' + (memberCount === 1 ? 'Member' : 'Members') : 'No members'}</span>
+          </div>
+          
+          <div class="mb-2" style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px; cursor: pointer;" onclick="viewProject('${project._id}')">
+            <i class="fa-solid fa-user-tie" style="font-size: 12px;"></i>
+            <span>Created by: ${project.createdBy?.name || 'Unknown'}</span>
           </div>
           
           <div class="mb-2" style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px; cursor: pointer;" onclick="viewProject('${project._id}')">

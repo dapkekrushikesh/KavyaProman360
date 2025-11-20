@@ -34,7 +34,7 @@ async function sendProjectAssignmentMail(to, project) {
             .info-row:last-child { border-bottom: none; }
             .info-label { font-weight: 600; color: #3b3b63; width: 140px; }
             .info-value { color: #495057; flex: 1; }
-            .cta-button { display: inline-block; background: linear-gradient(135deg, #3b3b63 0%, #52528c 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; text-align: center; }
+            .cta-button { display: inline-block; background: #dc3545; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; text-align: center; }
             .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }
           </style>
         </head>
@@ -131,7 +131,7 @@ async function sendEventNotificationMail(to, userName, eventDetails) {
             .info-row:last-child { border-bottom: none; }
             .info-label { font-weight: 600; color: #3b3b63; width: 140px; }
             .info-value { color: #495057; flex: 1; }
-            .cta-button { display: inline-block; background: linear-gradient(135deg, #3b3b63 0%, #52528c 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; text-align: center; }
+            .cta-button { display: inline-block; background: #dc3545; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; text-align: center; }
             .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }
           </style>
         </head>
@@ -219,7 +219,7 @@ async function sendPasswordResetMail(to, userName, resetUrl, resetToken) {
             .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
             .content { padding: 30px 20px; }
             .warning-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 6px; }
-            .cta-button { display: inline-block; background: linear-gradient(135deg, #3b3b63 0%, #52528c 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; text-align: center; }
+            .cta-button { display: inline-block; background: #dc3545; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; text-align: center; }
             .token-box { background-color: #f8f9fa; padding: 15px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 16px; word-break: break-all; margin: 15px 0; }
             .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }
           </style>

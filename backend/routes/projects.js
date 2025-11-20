@@ -13,13 +13,17 @@ router.get('/', auth, async (req, res) => {
     
     let projects;
     
-    // Admin and Project Manager can see all projects
-    if (userRole === 'Admin' || userRole === 'Project Manager') {
-      projects = await Project.find().populate('members', 'email name role');
+    // Admin, Team Lead, and Project Manager can see all projects
+    if (userRole === 'Admin' || userRole === 'Team Lead' || userRole === 'Project Manager') {
+      projects = await Project.find()
+        .populate('members', 'email name role')
+        .populate('createdBy', 'name email');
     } 
     // Team Members only see projects they're assigned to
     else {
-      projects = await Project.find({ members: userId }).populate('members', 'email name role');
+      projects = await Project.find({ members: userId })
+        .populate('members', 'email name role')
+        .populate('createdBy', 'name email');
     }
     
     res.json(projects);
@@ -34,10 +38,10 @@ router.post('/', auth, async (req, res) => {
   try {
     const { title, description, assigneeEmails, startDate, endDate } = req.body;
     
-    // Only Admin and Project Manager can create projects
-    if (req.user.role !== 'Admin' && req.user.role !== 'Project Manager') {
+    // Only Admin, Team Lead, and Project Manager can create projects
+    if (req.user.role !== 'Admin' && req.user.role !== 'Team Lead' && req.user.role !== 'Project Manager') {
       return res.status(403).json({ 
-        message: 'Access denied. Only Admin and Project Manager can create projects.' 
+        message: 'Access denied. Only Admin, Team Lead, and Project Manager can create projects.' 
       });
     }
     
@@ -81,6 +85,7 @@ router.post('/', auth, async (req, res) => {
     
     // Populate members field before returning
     await project.populate('members', 'email name role');
+    await project.populate('createdBy', 'name email');
     
     // Send email notifications to all assignees
     const emailResults = [];
@@ -119,7 +124,9 @@ router.post('/', auth, async (req, res) => {
 // GET /api/projects/:id
 router.get('/:id', auth, async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id).populate('members', 'email name role');
+    const project = await Project.findById(req.params.id)
+      .populate('members', 'email name role')
+      .populate('createdBy', 'name email');
     if (!project) return res.status(404).json({ message: 'Not found' });
     
     res.json(project);
@@ -132,10 +139,10 @@ router.get('/:id', auth, async (req, res) => {
 // PUT /api/projects/:id
 router.put('/:id', auth, async (req, res) => {
   try {
-    // Only Admin and Project Manager can edit projects
-    if (req.user.role !== 'Admin' && req.user.role !== 'Project Manager') {
+    // Only Admin, Team Lead, and Project Manager can edit projects
+    if (req.user.role !== 'Admin' && req.user.role !== 'Team Lead' && req.user.role !== 'Project Manager') {
       return res.status(403).json({ 
-        message: 'Access denied. Only Admin and Project Manager can edit projects.' 
+        message: 'Access denied. Only Admin, Team Lead, and Project Manager can edit projects.' 
       });
     }
     
@@ -161,7 +168,9 @@ router.put('/:id', auth, async (req, res) => {
       req.params.id, 
       updateData, 
       { new: true, runValidators: true }
-    ).populate('members', 'email name role');
+    )
+      .populate('members', 'email name role')
+      .populate('createdBy', 'name email');
     
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -177,10 +186,10 @@ router.put('/:id', auth, async (req, res) => {
 // DELETE /api/projects/:id
 router.delete('/:id', auth, async (req, res) => {
   try {
-    // Only Admin and Project Manager can delete projects
-    if (req.user.role !== 'Admin' && req.user.role !== 'Project Manager') {
+    // Only Admin, Team Lead, and Project Manager can delete projects
+    if (req.user.role !== 'Admin' && req.user.role !== 'Team Lead' && req.user.role !== 'Project Manager') {
       return res.status(403).json({ 
-        message: 'Access denied. Only Admin and Project Manager can delete projects.' 
+        message: 'Access denied. Only Admin, Team Lead, and Project Manager can delete projects.' 
       });
     }
     

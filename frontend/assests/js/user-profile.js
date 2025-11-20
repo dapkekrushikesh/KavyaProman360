@@ -72,6 +72,7 @@ function formatRole(role) {
   
   // Convert role to proper case
   if (role === 'Admin') return 'Admin';
+  if (role === 'Team Lead') return 'Team Lead';
   if (role === 'Project Manager') return 'Project Manager';
   if (role === 'Team Member') return 'Team Member';
   

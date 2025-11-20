@@ -12,7 +12,7 @@ router.get('/', auth, async (req, res) => {
     let query = {};
     
     // Team Members only see tasks assigned to them or tasks in projects they're members of
-    if (userRole !== 'Admin' && userRole !== 'Project Manager') {
+    if (userRole !== 'Admin' && userRole !== 'Team Lead' && userRole !== 'Project Manager') {
       // Find projects where user is a member
       const Project = require('../models/Project');
       const userProjects = await Project.find({ members: userId }).select('_id');

@@ -24,7 +24,39 @@ document.addEventListener('DOMContentLoaded', async function() {
   await loadEvents();
   renderCalendar(currentMonth, currentYear);
   setupEventListeners();
+  disableEventCreationForTeamMembers();
 });
+
+function disableEventCreationForTeamMembers() {
+  // Get current user from sessionStorage
+  const currentUserData = sessionStorage.getItem('currentUser');
+  if (currentUserData) {
+    try {
+      const user = JSON.parse(currentUserData);
+      const userRole = user.role;
+      
+      // Disable event creation for Team Members
+      if (userRole === 'Team Member') {
+        // Hide the "Add Another Event" button
+        const addAnotherEventBtn = document.getElementById('addAnotherEvent');
+        if (addAnotherEventBtn) {
+          addAnotherEventBtn.style.display = 'none';
+        }
+        
+        // Disable clicking on calendar dates to add events
+        window.isTeamMember = true;
+        
+        // Add visual indicator that calendar is view-only
+        const calendarContainer = document.querySelector('.calendar-container');
+        if (calendarContainer) {
+          calendarContainer.style.cursor = 'default';
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+    }
+  }
+}
 
 async function loadProjects() {
   try {
@@ -214,6 +246,11 @@ function renderCalendar(month, year) {
 }
 
 function openModal(dateKey) {
+  // Prevent Team Members from creating events
+  if (window.isTeamMember) {
+    return; // Don't open modal for Team Members
+  }
+  
   selectedDateKey = dateKey;
   const modal = new bootstrap.Modal(document.getElementById("eventModal"));
   

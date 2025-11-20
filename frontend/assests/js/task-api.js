@@ -12,7 +12,29 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeSidebar();
   loadTasksFromBackend();
   setupEventListeners();
+  hideNewTaskButtonForTeamMembers();
 });
+
+function hideNewTaskButtonForTeamMembers() {
+  // Get current user from sessionStorage
+  const currentUserData = sessionStorage.getItem('currentUser');
+  if (currentUserData) {
+    try {
+      const user = JSON.parse(currentUserData);
+      const userRole = user.role;
+      
+      // Hide "New Task" button for Team Members
+      if (userRole === 'Team Member') {
+        const newTaskBtn = document.querySelector('.btn-new[data-bs-target="#addTaskModal"]');
+        if (newTaskBtn) {
+          newTaskBtn.style.display = 'none';
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+    }
+  }
+}
 
 function initializeSidebar() {
   const sidebarLinks = document.querySelectorAll(".sidebar a");
