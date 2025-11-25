@@ -108,13 +108,14 @@ position: fixed;
 
 .topbar .search-box i {
   position: absolute;
-  left: 12px;
+  right: 12px;
   color: #777;
   font-size: 14px;
 }
 
 .topbar .search-box input {
-  padding-left: 35px; /* space for icon */
+  padding-right: 35px; /* space for icon */
+  padding-left: 15px;
   border-radius: 6px;
   border: 1px solid #ccc;
   height: 36px;
@@ -209,10 +210,9 @@ position: fixed;
 .search-box input {
      border-radius: 30px;
     border: 1px solid #ccc;
-    padding: 6px 15px;
+    padding: 6px 38px 6px 15px;
     width: 250px;
     transition: 0.3s;
-    padding-right: 38px;
 }
 .search-box input:focus {
     border-color: #3b3b63;
@@ -222,7 +222,7 @@ position: fixed;
 .search-box .fa-search,
 .search-box .fa-magnifying-glass {
   position: absolute;
-  left: 12px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: #b0b0b0;
@@ -382,7 +382,7 @@ position: fixed;
 /* ✅ Curved input field */
 .search-box .form-control {
   border-radius: 30px !important;
-  padding: 8px 40px 8px 38px; /* extra space for icon */
+  padding: 8px 38px 8px 15px; /* extra space for icon on right */
   border: 1px solid #ccc;
   transition: 0.3s;
   font-size: 14px;
@@ -398,7 +398,7 @@ position: fixed;
 /* ✅ Magnifying glass icon styling */
 .search-box .fa-magnifying-glass {
   position: absolute;
-  left: 14px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   color: #888;
