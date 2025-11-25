@@ -128,8 +128,185 @@ async function loadProjectTasks(projectId) {
     if (!res.ok) throw new Error('Failed to load tasks');
     const tasks = await res.json();
     renderTasks(tasks);
+    // Load employee performance after tasks are loaded
+    await loadEmployeePerformance(projectId, tasks);
   } catch (err) {
     document.querySelector('#tasksTable tbody').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Could not load tasks.</td></tr>';
+  }
+}
+
+async function loadEmployeePerformance(projectId, tasks) {
+  const token = localStorage.getItem('token');
+  const performanceSection = document.getElementById('employeePerformanceSection');
+  
+  if (!performanceSection) return;
+  
+  try {
+    // Get project details to get all assigned members
+    const projectRes = await fetch(`/api/projects/${projectId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!projectRes.ok) throw new Error('Failed to load project');
+    const project = await projectRes.json();
+    
+    // Calculate performance for each employee
+    const employeePerformance = {};
+    
+    // Initialize performance data for all assigned members
+    if (project.assignedTo && Array.isArray(project.assignedTo)) {
+      project.assignedTo.forEach(member => {
+        const memberId = member._id || member;
+        employeePerformance[memberId] = {
+          name: member.name || 'Unknown',
+          email: member.email || '',
+          totalTasks: 0,
+          completedTasks: 0,
+          inProgressTasks: 0,
+          pendingTasks: 0,
+          todoTasks: 0,
+          overdueTasks: 0,
+          completionRate: 0
+        };
+      });
+    }
+    
+    // Calculate task statistics for each employee
+    tasks.forEach(task => {
+      const assigneeId = task.assignee?._id || task.assignee;
+      if (!assigneeId) return;
+      
+      if (!employeePerformance[assigneeId]) {
+        employeePerformance[assigneeId] = {
+          name: task.assignee?.name || 'Unknown',
+          email: task.assignee?.email || '',
+          totalTasks: 0,
+          completedTasks: 0,
+          inProgressTasks: 0,
+          pendingTasks: 0,
+          todoTasks: 0,
+          overdueTasks: 0,
+          completionRate: 0
+        };
+      }
+      
+      const employee = employeePerformance[assigneeId];
+      employee.totalTasks++;
+      
+      // Count by status
+      const status = task.status || 'Pending';
+      if (status === 'Completed') {
+        employee.completedTasks++;
+      } else if (status === 'In Progress') {
+        employee.inProgressTasks++;
+      } else if (status === 'Pending') {
+        employee.pendingTasks++;
+      } else if (status === 'To Do') {
+        employee.todoTasks++;
+      }
+      
+      // Check if overdue
+      if (task.endDate && status !== 'Completed') {
+        const dueDate = new Date(task.endDate);
+        const today = new Date();
+        if (dueDate < today) {
+          employee.overdueTasks++;
+        }
+      }
+    });
+    
+    // Calculate completion rates
+    Object.values(employeePerformance).forEach(employee => {
+      if (employee.totalTasks > 0) {
+        employee.completionRate = Math.round((employee.completedTasks / employee.totalTasks) * 100);
+      }
+    });
+    
+    // Sort by completion rate (descending)
+    const sortedEmployees = Object.entries(employeePerformance)
+      .sort((a, b) => b[1].completionRate - a[1].completionRate);
+    
+    // Render performance cards
+    if (sortedEmployees.length === 0) {
+      performanceSection.innerHTML = `
+        <div class="col-12 text-center text-muted py-4">
+          <i class="fa-solid fa-users-slash me-2"></i>No employees assigned to this project yet
+        </div>
+      `;
+      return;
+    }
+    
+    performanceSection.innerHTML = sortedEmployees.map(([employeeId, employee]) => {
+      const progressColor = employee.completionRate >= 80 ? '#28a745' : 
+                           employee.completionRate >= 50 ? '#ffc107' : '#dc3545';
+      
+      return `
+        <div class="col-lg-4 col-md-6 mb-3">
+          <div class="card shadow-sm" style="border-left: 4px solid ${progressColor}; height: 100%;">
+            <div class="card-body">
+              <div class="mb-3">
+                <h6 class="mb-1" style="font-weight: 600; color: #333;">
+                  <i class="fa-solid fa-user-circle me-2" style="color: #52528c;"></i>${employee.name}
+                </h6>
+                <small class="text-muted">${employee.email}</small>
+              </div>
+              
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span style="font-size: 0.9rem; font-weight: 500;">Overall Progress</span>
+                  <span style="font-weight: 600; color: ${progressColor};">${employee.completionRate}%</span>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 5px;">
+                  <div class="progress-bar" style="width: ${employee.completionRate}%; background-color: ${progressColor};" role="progressbar"></div>
+                </div>
+              </div>
+              
+              <div class="row g-2 text-center">
+                <div class="col-6">
+                  <div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: #52528c;">${employee.totalTasks}</div>
+                    <small class="text-muted">Total Tasks</small>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div style="background: #d4edda; padding: 10px; border-radius: 8px;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: #28a745;">${employee.completedTasks}</div>
+                    <small class="text-muted">Completed</small>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div style="background: #fff3cd; padding: 10px; border-radius: 8px;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: #ffc107;">${employee.inProgressTasks}</div>
+                    <small class="text-muted">In Progress</small>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div style="background: ${employee.overdueTasks > 0 ? '#f8d7da' : '#f8f9fa'}; padding: 10px; border-radius: 8px;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: ${employee.overdueTasks > 0 ? '#dc3545' : '#6c757d'};">${employee.overdueTasks}</div>
+                    <small class="text-muted">Overdue</small>
+                  </div>
+                </div>
+              </div>
+              
+              ${employee.totalTasks === 0 ? `
+                <div class="alert alert-info mt-3 mb-0" style="font-size: 0.85rem; padding: 8px;">
+                  <i class="fa-solid fa-info-circle me-1"></i>No tasks assigned yet
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+  } catch (err) {
+    console.error('Error loading employee performance:', err);
+    performanceSection.innerHTML = `
+      <div class="col-12">
+        <div class="alert alert-danger">
+          <i class="fa-solid fa-exclamation-circle me-2"></i>Could not load employee performance data
+        </div>
+      </div>
+    `;
   }
 }
 
