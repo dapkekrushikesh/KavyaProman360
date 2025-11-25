@@ -311,8 +311,8 @@ async function sendOTPMail(to, userName, otp) {
         <body>
           <div class="container">
             <div class="header">
-              <h1>🔐 Login Verification</h1>
-              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Your One-Time Password</p>
+              <h1 style="color: #dc3545;">🔐 Login Verification</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; color: #dc3545;">Your One-Time Password</p>
             </div>
             <div class="content">
               <p style="font-size: 16px; color: #495057; margin-top: 0;">Hello ${userName || 'there'},</p>
