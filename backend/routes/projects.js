@@ -87,16 +87,17 @@ router.post('/', auth, async (req, res) => {
     await project.populate('members', 'email name role');
     await project.populate('createdBy', 'name email');
     
-    // Send email notifications to all assignees
+    // Send email notifications to all assigned members (registered users only)
     const emailResults = [];
-    if (Array.isArray(assigneeEmails) && assigneeEmails.length > 0) {
-      for (const email of assigneeEmails) {
+    if (project.members && project.members.length > 0) {
+      for (const member of project.members) {
         try {
-          const result = await theBrevoMailer.sendProjectAssignmentMail(email, project);
-          emailResults.push({ email, success: result.success });
+          const result = await theBrevoMailer.sendProjectAssignmentMail(member.email, project);
+          emailResults.push({ email: member.email, success: result.success });
+          console.log(`✅ Email sent to: ${member.email}`);
         } catch (error) {
-          console.error(`Failed to send email to ${email}:`, error.message);
-          emailResults.push({ email, success: false, error: error.message });
+          console.error(`❌ Failed to send email to ${member.email}:`, error.message);
+          emailResults.push({ email: member.email, success: false, error: error.message });
         }
       }
     }
@@ -148,6 +149,12 @@ router.put('/:id', auth, async (req, res) => {
     
     const { title, description, members, startDate, endDate, status } = req.body;
     
+    // Get the existing project to compare members
+    const existingProject = await Project.findById(req.params.id);
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    
     const updateData = {
       title,
       description,
@@ -176,7 +183,40 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Project not found' });
     }
     
-    res.json(project);
+    // Send email notifications to newly added members
+    const emailResults = [];
+    if (members && Array.isArray(members)) {
+      // Find newly added members (members that weren't in the original project)
+      const existingMemberIds = existingProject.members.map(m => m.toString());
+      const newMemberIds = members.filter(m => !existingMemberIds.includes(m.toString()));
+      
+      if (newMemberIds.length > 0) {
+        // Get user details for new members
+        const newMembers = await User.find({ _id: { $in: newMemberIds } });
+        
+        // Send emails to newly added members
+        for (const member of newMembers) {
+          try {
+            const result = await theBrevoMailer.sendProjectAssignmentMail(member.email, project);
+            emailResults.push({ email: member.email, success: result.success });
+            console.log(`✅ Email sent to newly added member: ${member.email}`);
+          } catch (error) {
+            console.error(`❌ Failed to send email to ${member.email}:`, error.message);
+            emailResults.push({ email: member.email, success: false, error: error.message });
+          }
+        }
+      }
+    }
+    
+    res.json({ 
+      project,
+      emailNotifications: emailResults.length > 0 ? {
+        sent: emailResults.filter(r => r.success).length,
+        failed: emailResults.filter(r => !r.success).length,
+        total: emailResults.length,
+        details: emailResults
+      } : null
+    });
   } catch (err) {
     console.error('Error updating project:', err);
     res.status(500).json({ message: 'Server error', error: err.message });

@@ -155,12 +155,22 @@ async function sendEventNotificationMail(to, userName, eventDetails) {
                 
                 <div class="info-row">
                   <span class="info-label">📅 Date:</span>
-                  <span class="info-value">${eventDetails.start ? new Date(eventDetails.start).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified'}</span>
+                  <span class="info-value">${eventDetails.date || 'Not specified'}</span>
                 </div>
                 
                 <div class="info-row">
                   <span class="info-label">⏰ Time:</span>
-                  <span class="info-value">${eventDetails.start ? new Date(eventDetails.start).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Not specified'}</span>
+                  <span class="info-value">${eventDetails.time || 'All day'}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">📁 Project:</span>
+                  <span class="info-value">${eventDetails.projectTitle || 'General'}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">👤 Created by:</span>
+                  <span class="info-value">${eventDetails.createdBy || 'Admin'}</span>
                 </div>
               </div>
               
@@ -363,9 +373,204 @@ async function sendOTPMail(to, userName, otp) {
   }
 }
 
+// Send task assignment email
+async function sendTaskAssignmentMail(to, userName, taskDetails) {
+  try {
+    const emailData = {
+      sender: {
+        email: process.env.BREVO_FROM_EMAIL,
+        name: 'KavyaProman360'
+      },
+      to: [{ email: to }],
+      subject: `📋 New Task Assigned: ${taskDetails.title}`,
+      htmlContent: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f7; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #3b3b63 0%, #52528c 100%); color: white; padding: 30px 20px; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+            .content { padding: 30px 20px; }
+            .task-info { background-color: #f8f9fa; border-left: 4px solid #52528c; padding: 20px; margin: 20px 0; border-radius: 6px; }
+            .info-row { display: flex; padding: 10px 0; border-bottom: 1px solid #e9ecef; }
+            .info-row:last-child { border-bottom: none; }
+            .info-label { font-weight: 600; color: #3b3b63; width: 140px; }
+            .info-value { color: #495057; flex: 1; }
+            .cta-button { display: inline-block; background: #dc3545; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; text-align: center; }
+            .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }
+            .priority-high { color: #dc3545; font-weight: 600; }
+            .priority-medium { color: #ffc107; font-weight: 600; }
+            .priority-low { color: #28a745; font-weight: 600; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="color: #dc3545;">📋 New Task Assignment</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; color: #dc3545;">You've been assigned a new task</p>
+            </div>
+            <div class="content">
+              <p style="font-size: 16px; color: #495057; margin-top: 0;">Hello ${userName || 'there'},</p>
+              <p style="font-size: 16px; color: #495057;">You have been assigned a new task in KavyaProman360. Here are the task details:</p>
+              
+              <div class="task-info">
+                <h2 style="margin-top: 0; color: #3b3b63; font-size: 22px;">${taskDetails.title}</h2>
+                
+                <div class="info-row">
+                  <span class="info-label">📋 Description:</span>
+                  <span class="info-value">${taskDetails.description || 'No description provided'}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">📁 Project:</span>
+                  <span class="info-value">${taskDetails.projectTitle || 'General Task'}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">⏰ Due Date:</span>
+                  <span class="info-value">${taskDetails.dueDate ? new Date(taskDetails.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified'}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">🚨 Priority:</span>
+                  <span class="info-value priority-${(taskDetails.priority || 'medium').toLowerCase()}">${(taskDetails.priority || 'Medium').toUpperCase()}</span>
+                </div>
+                
+                <div class="info-row">
+                  <span class="info-label">📊 Status:</span>
+                  <span class="info-value">${taskDetails.status || 'To Do'}</span>
+                </div>
+              </div>
+              
+              <p style="font-size: 16px; color: #495057;">Please log in to your dashboard to view the task details and start working on it.</p>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/task.html" class="cta-button">
+                  View Tasks →
+                </a>
+              </div>
+            </div>
+            <div class="footer">
+              <p style="margin: 5px 0;">© 2025 KavyaProman360. All rights reserved.</p>
+              <p style="margin: 5px 0; font-size: 12px;">This is an automated email, please do not reply.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log(`✅ Task assignment email sent to ${to}`);
+    return { success: true, messageId: response.data.messageId };
+  } catch (error) {
+    console.error(`❌ Error sending task assignment email to ${to}:`, error.response?.data || error.message);
+    throw error;
+  }
+}
+
+// Send task update email
+async function sendTaskUpdateMail(to, userName, taskDetails, changes) {
+  try {
+    const changesList = Object.entries(changes)
+      .map(([key, value]) => `<li><strong>${key}:</strong> ${value.old} → ${value.new}</li>`)
+      .join('');
+
+    const emailData = {
+      sender: {
+        email: process.env.BREVO_FROM_EMAIL,
+        name: 'KavyaProman360'
+      },
+      to: [{ email: to }],
+      subject: `🔄 Task Updated: ${taskDetails.title}`,
+      htmlContent: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f7; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #3b3b63 0%, #52528c 100%); color: white; padding: 30px 20px; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+            .content { padding: 30px 20px; }
+            .task-info { background-color: #f8f9fa; border-left: 4px solid #52528c; padding: 20px; margin: 20px 0; border-radius: 6px; }
+            .changes-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 6px; }
+            .changes-box ul { margin: 10px 0; padding-left: 20px; }
+            .changes-box li { margin: 8px 0; color: #495057; }
+            .cta-button { display: inline-block; background: #dc3545; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: 600; text-align: center; }
+            .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="color: #dc3545;">🔄 Task Updated</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; color: #dc3545;">A task has been updated</p>
+            </div>
+            <div class="content">
+              <p style="font-size: 16px; color: #495057; margin-top: 0;">Hello ${userName || 'there'},</p>
+              <p style="font-size: 16px; color: #495057;">The task "<strong>${taskDetails.title}</strong>" has been updated. Here are the changes:</p>
+              
+              <div class="changes-box">
+                <strong>📝 Changes Made:</strong>
+                <ul>
+                  ${changesList}
+                </ul>
+              </div>
+
+              <div class="task-info">
+                <h2 style="margin-top: 0; color: #3b3b63; font-size: 22px;">${taskDetails.title}</h2>
+                <p style="color: #6c757d; font-size: 14px; margin: 5px 0;">Project: ${taskDetails.projectTitle || 'General Task'}</p>
+                <p style="color: #6c757d; font-size: 14px; margin: 5px 0;">Due: ${taskDetails.dueDate ? new Date(taskDetails.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified'}</p>
+                <p style="color: #6c757d; font-size: 14px; margin: 5px 0;">Priority: ${(taskDetails.priority || 'Medium').toUpperCase()}</p>
+              </div>
+              
+              <p style="font-size: 16px; color: #495057;">Please log in to your dashboard to view the updated task details.</p>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/task.html" class="cta-button">
+                  View Tasks →
+                </a>
+              </div>
+            </div>
+            <div class="footer">
+              <p style="margin: 5px 0;">© 2025 KavyaProman360. All rights reserved.</p>
+              <p style="margin: 5px 0; font-size: 12px;">This is an automated email, please do not reply.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log(`✅ Task update email sent to ${to}`);
+    return { success: true, messageId: response.data.messageId };
+  } catch (error) {
+    console.error(`❌ Error sending task update email to ${to}:`, error.response?.data || error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   sendProjectAssignmentMail,
   sendEventNotificationMail,
   sendPasswordResetMail,
-  sendOTPMail
+  sendOTPMail,
+  sendTaskAssignmentMail,
+  sendTaskUpdateMail
 };

@@ -225,7 +225,10 @@ function createTaskRow(task) {
         </button>
       </td>
       <td>
-        <button class="btn btn-sm btn-danger" onclick="deleteTask('${task._id}')">
+        <button class="btn btn-sm btn-primary me-1" onclick="openEditTaskModal('${task._id}')" title="Edit Task">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="deleteTask('${task._id}')" title="Delete Task">
           <i class="fa-solid fa-trash"></i>
         </button>
       </td>
@@ -320,6 +323,120 @@ async function editTask(taskId) {
       alert('✅ Task updated successfully!');
     } else {
       alert('❌ Failed to update task');
+    }
+  } catch (error) {
+    console.error('Error updating task:', error);
+    alert('❌ Error updating task');
+  }
+}
+
+// Open Edit Task Modal
+let currentEditTaskId = null;
+
+async function openEditTaskModal(taskId) {
+  try {
+    currentEditTaskId = taskId;
+    const task = tasks.find(t => t._id === taskId);
+    
+    if (!task) {
+      alert('❌ Task not found');
+      return;
+    }
+
+    // Populate the edit form
+    document.getElementById('editTaskTitle').value = task.title || '';
+    document.getElementById('editTaskDescription').value = task.description || '';
+    document.getElementById('editTaskAssignee').value = task.assignee?.name || task.assignee?.email || '';
+    document.getElementById('editTaskDueDate').value = task.dueDate ? task.dueDate.split('T')[0] : '';
+    document.getElementById('editTaskPriority').value = (task.priority || 'Medium');
+    
+    // Set status dropdown
+    const statusValue = (task.status || 'todo').toLowerCase().trim();
+    let statusOption = 'todo';
+    if (statusValue === 'in-progress' || statusValue === 'progress' || statusValue === 'in progress') {
+      statusOption = 'in-progress';
+    } else if (statusValue === 'done' || statusValue === 'completed') {
+      statusOption = 'done';
+    } else if (statusValue === 'todo' || statusValue === 'pending') {
+      statusOption = 'todo';
+    }
+    document.getElementById('editTaskStatus').value = statusOption;
+
+    // Show the modal
+    const editModal = new bootstrap.Modal(document.getElementById('editTaskModal'));
+    editModal.show();
+  } catch (error) {
+    console.error('Error opening edit modal:', error);
+    alert('❌ Error opening edit modal');
+  }
+}
+
+// Handle Edit Task Form Submission
+document.addEventListener('DOMContentLoaded', function() {
+  const editTaskForm = document.getElementById('editTaskForm');
+  if (editTaskForm) {
+    editTaskForm.addEventListener('submit', handleEditTask);
+  }
+});
+
+async function handleEditTask(e) {
+  e.preventDefault();
+
+  if (!currentEditTaskId) {
+    alert('❌ No task selected for editing');
+    return;
+  }
+
+  // Get form values
+  const taskTitle = document.getElementById('editTaskTitle').value;
+  const taskDescription = document.getElementById('editTaskDescription').value;
+  const taskAssignee = document.getElementById('editTaskAssignee').value;
+  const taskDueDate = document.getElementById('editTaskDueDate').value;
+  const taskPriority = document.getElementById('editTaskPriority').value;
+  const taskStatus = document.getElementById('editTaskStatus').value;
+
+  const taskData = {
+    title: taskTitle,
+    description: taskDescription,
+    assignee: taskAssignee,
+    dueDate: taskDueDate,
+    priority: taskPriority,
+    status: taskStatus
+  };
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/api/tasks/${currentEditTaskId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(taskData)
+    });
+
+    if (response.ok) {
+      const updatedTask = await response.json();
+      
+      // Update the task in local array
+      const taskIndex = tasks.findIndex(t => t._id === currentEditTaskId);
+      if (taskIndex !== -1) {
+        tasks[taskIndex] = updatedTask;
+      }
+
+      // Re-render tasks
+      renderTasks(tasks);
+      updateTaskStats();
+
+      // Close modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('editTaskModal'));
+      if (modal) modal.hide();
+
+      alert('✅ Task updated successfully!');
+      currentEditTaskId = null;
+    } else {
+      const error = await response.json();
+      alert('❌ Failed to update task: ' + (error.message || 'Unknown error'));
     }
   } catch (error) {
     console.error('Error updating task:', error);

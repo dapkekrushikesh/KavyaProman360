@@ -209,6 +209,64 @@
     </div>
     </div>
 
+  <!-- ✏️ Edit Task Modal -->
+  <div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:12px; overflow:hidden;">
+
+        <!-- Header -->
+        <div class="modal-header" style="background-color:#52528c; color:white; border:none;">
+          <h5 class="modal-title" id="editTaskModalLabel">Edit Task</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body" style="padding:20px;">
+          <form id="editTaskForm">
+
+            <!-- Task Title -->
+            <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Task Title</label>
+            <input type="text" id="editTaskTitle" name="title" class="form-control" placeholder="Enter task title" style="margin-bottom:15px;" required>
+
+            <!-- Description -->
+            <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Description</label>
+            <textarea id="editTaskDescription" name="description" class="form-control" placeholder="Enter task description" style="margin-bottom:15px;" rows="3"></textarea>
+
+            <!-- Assigned To -->
+            <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Assigned To</label>
+            <input type="text" id="editTaskAssignee" name="assignee" class="form-control" placeholder="Enter assignee name" style="margin-bottom:15px;">
+
+            <!-- Due Date -->
+            <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Due Date</label>
+            <input type="date" id="editTaskDueDate" name="dueDate" class="form-control" style="margin-bottom:15px;">
+
+            <!-- Priority -->
+            <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Priority</label>
+            <select id="editTaskPriority" name="priority" class="form-select" style="margin-bottom:15px;">
+              <option>Low</option>
+              <option>Medium</option>
+              <option>High</option>
+            </select>
+
+            <!-- Status -->
+            <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Status</label>
+            <select id="editTaskStatus" name="status" class="form-select" style="margin-bottom:20px;">
+              <option value="todo">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+
+            <!-- Update Button -->
+            <button type="submit" class="btn w-100" 
+                    style="background-color:#52528c; color:white; font-weight:500; border:none; border-radius:6px; padding:10px;">
+              Update Task
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- 🗨️ Comment Modal -->
 <div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">

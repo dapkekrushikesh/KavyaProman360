@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Task = require('../models/Task');
+const User = require('../models/User');
+const { sendTaskAssignmentMail, sendTaskUpdateMail } = require('../utils/mailer-brevo');
 
 // GET /api/tasks
 router.get('/', auth, async (req, res) => {
@@ -69,7 +71,37 @@ router.post('/', auth, async (req, res) => {
     await task.populate('assignee', 'email name');
     await task.populate('project', 'title');
     
-    res.status(201).json(task);
+    // Send email notification to assignee if task is assigned
+    let emailNotification = { sent: false };
+    if (assignee) {
+      try {
+        const assignedUser = await User.findById(assignee);
+        if (assignedUser && assignedUser.email) {
+          // Don't send email if user is assigning to themselves
+          if (assignedUser._id.toString() !== req.user._id.toString()) {
+            await sendTaskAssignmentMail(
+              assignedUser.email,
+              assignedUser.name,
+              {
+                title: task.title,
+                description: task.description || 'No description provided',
+                projectTitle: task.project?.title || 'General Task',
+                dueDate: task.dueDate,
+                priority: task.priority || 'Medium',
+                status: task.status || 'To Do'
+              }
+            );
+            emailNotification = { sent: true, email: assignedUser.email };
+            console.log(`✅ Task assignment email sent to ${assignedUser.email}`);
+          }
+        }
+      } catch (emailError) {
+        console.error('Failed to send task assignment email:', emailError);
+        emailNotification = { sent: false, error: emailError.message };
+      }
+    }
+    
+    res.status(201).json({ task, emailNotification });
   } catch (err) {
     console.error('Error creating task:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -129,12 +161,114 @@ router.get('/:id', auth, async (req, res) => {
 // PUT /api/tasks/:id
 router.put('/:id', auth, async (req, res) => {
   try {
+    // Get the existing task to compare changes
+    const existingTask = await Task.findById(req.params.id)
+      .populate('assignee', 'email name')
+      .populate('project', 'title');
+    
+    if (!existingTask) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+    
+    // Track changes
+    const changes = {};
+    const fieldsToTrack = {
+      title: 'Title',
+      description: 'Description',
+      status: 'Status',
+      priority: 'Priority',
+      dueDate: 'Due Date'
+    };
+    
+    Object.keys(fieldsToTrack).forEach(field => {
+      if (req.body[field] !== undefined && req.body[field] !== existingTask[field]) {
+        let oldValue = existingTask[field];
+        let newValue = req.body[field];
+        
+        // Format dates
+        if (field === 'dueDate') {
+          oldValue = oldValue ? new Date(oldValue).toLocaleDateString() : 'Not set';
+          newValue = newValue ? new Date(newValue).toLocaleDateString() : 'Not set';
+        }
+        
+        changes[fieldsToTrack[field]] = { old: oldValue, new: newValue };
+      }
+    });
+    
+    // Check if assignee changed
+    const assigneeChanged = req.body.assignee && 
+                           req.body.assignee !== existingTask.assignee?._id?.toString();
+    
+    // Update the task
     const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true })
       .populate('assignee', 'email name')
       .populate('project', 'title');
-    res.json(task);
+    
+    // Send email notifications
+    let emailNotifications = { sent: [], failed: [] };
+    
+    // If assignee changed, send assignment email to new assignee
+    if (assigneeChanged && req.body.assignee) {
+      try {
+        const newAssignee = await User.findById(req.body.assignee);
+        if (newAssignee && newAssignee.email && newAssignee._id.toString() !== req.user._id.toString()) {
+          await sendTaskAssignmentMail(
+            newAssignee.email,
+            newAssignee.name,
+            {
+              title: task.title,
+              description: task.description || 'No description provided',
+              projectTitle: task.project?.title || 'General Task',
+              dueDate: task.dueDate,
+              priority: task.priority || 'Medium',
+              status: task.status || 'To Do'
+            }
+          );
+          emailNotifications.sent.push({ email: newAssignee.email, type: 'assignment' });
+          console.log(`✅ Task assignment email sent to ${newAssignee.email}`);
+        }
+      } catch (emailError) {
+        console.error('Failed to send task assignment email:', emailError);
+        emailNotifications.failed.push({ email: req.body.assignee, error: emailError.message });
+      }
+    }
+    
+    // If task was updated (not just assigned), send update email to existing assignee
+    if (Object.keys(changes).length > 0 && existingTask.assignee && existingTask.assignee.email) {
+      // Don't send update email if user is updating their own task
+      if (existingTask.assignee._id.toString() !== req.user._id.toString()) {
+        try {
+          await sendTaskUpdateMail(
+            existingTask.assignee.email,
+            existingTask.assignee.name,
+            {
+              title: task.title,
+              projectTitle: task.project?.title || 'General Task',
+              dueDate: task.dueDate,
+              priority: task.priority || 'Medium'
+            },
+            changes
+          );
+          emailNotifications.sent.push({ email: existingTask.assignee.email, type: 'update' });
+          console.log(`✅ Task update email sent to ${existingTask.assignee.email}`);
+        } catch (emailError) {
+          console.error('Failed to send task update email:', emailError);
+          emailNotifications.failed.push({ email: existingTask.assignee.email, error: emailError.message });
+        }
+      }
+    }
+    
+    res.json({ 
+      task, 
+      emailNotifications: {
+        sent: emailNotifications.sent.length,
+        failed: emailNotifications.failed.length,
+        details: emailNotifications
+      }
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error updating task:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

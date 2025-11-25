@@ -480,7 +480,8 @@ async function editProject(projectId) {
   try {
     // Fetch the project from backend to ensure we have the latest populated data
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3000/api/projects/${projectId}`, {
+    const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
+    const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
