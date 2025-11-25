@@ -41,8 +41,8 @@ async function sendProjectAssignmentMail(to, project) {
         <body>
           <div class="container">
             <div class="header">
-              <h1>🎯 New Project Assignment</h1>
-              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">You've been assigned to a new project</p>
+              <h1 style="color: #dc3545;">🎯 New Project Assignment</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; color: #dc3545;">You've been assigned to a new project</p>
             </div>
             <div class="content">
               <p style="font-size: 16px; color: #495057; margin-top: 0;">Hello,</p>
