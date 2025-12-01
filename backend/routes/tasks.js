@@ -54,11 +54,15 @@ router.get('/', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { title, description, project, assignee, status, startDate, endDate, dueDate, priority } = req.body;
+    
+    // Convert empty string to null for assignee
+    const assigneeId = assignee && assignee !== '' ? assignee : null;
+    
     const task = await Task.create({ 
       title, 
       description, 
       project, 
-      assignee, 
+      assignee: assigneeId, 
       status: status || 'todo', 
       priority: priority || 'medium',
       startDate, 
@@ -73,9 +77,9 @@ router.post('/', auth, async (req, res) => {
     
     // Send email notification to assignee if task is assigned
     let emailNotification = { sent: false };
-    if (assignee) {
+    if (assigneeId) {
       try {
-        const assignedUser = await User.findById(assignee);
+        const assignedUser = await User.findById(assigneeId);
         if (assignedUser && assignedUser.email) {
           // Don't send email if user is assigning to themselves
           if (assignedUser._id.toString() !== req.user._id.toString()) {

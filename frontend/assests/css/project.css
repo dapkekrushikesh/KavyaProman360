@@ -765,6 +765,10 @@ body {
   transform: translateY(-2px);
 }
 
+.btn-close{
+color: white;
+}
+
 /* Profile Modal Styles */
 .profile-modal .modal-content {
   background:#ffffff;

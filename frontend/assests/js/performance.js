@@ -143,20 +143,20 @@
           }
 
           // Count by status
-          const status = task.status || 'Pending';
-          if (status === 'Completed') {
+          const status = (task.status || '').toLowerCase().trim();
+          if (status === 'completed' || status === 'done') {
             employee.completedTasks++;
-          } else if (status === 'In Progress') {
+          } else if (status === 'in progress' || status === 'in-progress' || status === 'progress') {
             employee.inProgressTasks++;
-          } else if (status === 'Pending') {
+          } else if (status === 'pending') {
             employee.pendingTasks++;
-          } else if (status === 'To Do') {
+          } else if (status === 'to do' || status === 'todo') {
             employee.todoTasks++;
           }
 
           // Check if overdue
-          if (task.endDate && status !== 'Completed') {
-            const dueDate = new Date(task.endDate);
+          if ((task.dueDate || task.endDate) && status !== 'completed' && status !== 'done') {
+            const dueDate = new Date(task.dueDate || task.endDate);
             const today = new Date();
             if (dueDate < today) {
               employee.overdueTasks++;
@@ -288,9 +288,18 @@
           return taskDate >= month.startDate && taskDate <= month.endDate;
         });
 
-        const completed = monthTasks.filter(t => t.status === 'Completed').length;
-        const inProgress = monthTasks.filter(t => t.status === 'In Progress').length;
-        const pending = monthTasks.filter(t => t.status === 'Pending' || t.status === 'To Do').length;
+        const completed = monthTasks.filter(t => {
+          const status = (t.status || '').toLowerCase().trim();
+          return status === 'completed' || status === 'done';
+        }).length;
+        const inProgress = monthTasks.filter(t => {
+          const status = (t.status || '').toLowerCase().trim();
+          return status === 'in progress' || status === 'in-progress' || status === 'progress';
+        }).length;
+        const pending = monthTasks.filter(t => {
+          const status = (t.status || '').toLowerCase().trim();
+          return status === 'pending' || status === 'to do' || status === 'todo';
+        }).length;
 
         return {
           month: month.name,

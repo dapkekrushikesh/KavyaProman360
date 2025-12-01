@@ -357,18 +357,17 @@ async function handleEditProject(e) {
 
   const projectName = document.getElementById('editProjectName').value;
   const projectDesc = document.getElementById('editProjectDesc').value;
-  const projectAssignee = document.getElementById('editProjectAssignee').value;
   const projectStartDate = document.getElementById('editProjectAssignedDate').value;
   const projectDueDate = document.getElementById('editProjectDueDate').value;
   const projectStatus = document.getElementById('editProjectStatus').value;
 
-  // Get the current project to retrieve members
+  // Get the current project to retrieve assignedTo members
   const project = projects.find(p => p._id === currentEditProjectId);
   
   // Extract member IDs properly (handle both populated and non-populated cases)
-  let memberIds = [];
-  if (project && project.members) {
-    memberIds = project.members.map(member => {
+  let assignedToIds = [];
+  if (project && project.assignedTo) {
+    assignedToIds = project.assignedTo.map(member => {
       // If member is an object (populated), extract the _id
       if (typeof member === 'object' && member !== null && member._id) {
         return member._id;
@@ -381,15 +380,16 @@ async function handleEditProject(e) {
   const projectData = {
     title: projectName,
     description: projectDesc,
-    members: memberIds,
+    assignedTo: assignedToIds,
     startDate: projectStartDate,
     endDate: projectDueDate,
-    status: projectStatus.toLowerCase().replace(' ', '-')
+    status: projectStatus
   };
 
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`/api/projects/${currentEditProjectId}`, {
+    const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
+    const response = await fetch(`${API_URL}/api/projects/${currentEditProjectId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -510,8 +510,8 @@ async function editProject(projectId) {
     document.getElementById('editProjectDueDate').value = project.endDate ? project.endDate.split('T')[0] : '';
     document.getElementById('editProjectStatus').value = project.status || 'In Progress';
 
-    // Render existing members
-    renderMembers(project.members || []);
+    // Render existing members (use assignedTo)
+    renderMembers(project.assignedTo || []);
 
     // Show edit modal
     const editModal = new bootstrap.Modal(document.getElementById('editProjectModal'));
@@ -605,9 +605,9 @@ async function handleAddMember() {
   const project = projects.find(p => p._id === currentEditProjectId);
   if (!project) return;
 
-  // Initialize members array if not exists
-  if (!project.members) {
-    project.members = [];
+  // Initialize assignedTo array if not exists
+  if (!project.assignedTo) {
+    project.assignedTo = [];
   }
 
   try {
@@ -630,7 +630,7 @@ async function handleAddMember() {
       const user = users[0];
       
       // Check if member already exists (check by user ID or email)
-      const memberExists = project.members.some(m => {
+      const memberExists = project.assignedTo.some(m => {
         if (typeof m === 'object' && m._id) {
           return m._id === user._id;
         }
@@ -643,10 +643,10 @@ async function handleAddMember() {
       }
 
       // Add member (store user ID)
-      project.members.push(user._id);
+      project.assignedTo.push(user._id);
       
       // Re-render members (show email for display)
-      renderMembers(project.members, [user]);
+      renderMembers(project.assignedTo, [user]);
       
       // Clear input
       input.value = '';
@@ -664,10 +664,10 @@ async function handleAddMember() {
 // Remove a member
 function removeMember(index) {
   const project = projects.find(p => p._id === currentEditProjectId);
-  if (!project || !project.members) return;
+  if (!project || !project.assignedTo) return;
 
-  project.members.splice(index, 1);
-  renderMembers(project.members);
+  project.assignedTo.splice(index, 1);
+  renderMembers(project.assignedTo);
 }
 
 // Delete project

@@ -7,9 +7,11 @@ if (!localStorage.getItem('token')) {
 
 // Load saved tasks from backend
 let tasks = [];
+let allUsers = [];
 
 document.addEventListener("DOMContentLoaded", function () {
   initializeSidebar();
+  loadUsers();
   loadTasksFromBackend();
   setupEventListeners();
   hideNewTaskButtonForTeamMembers();
@@ -71,6 +73,11 @@ function setupEventListeners() {
     addTaskForm.addEventListener("submit", handleAddTask);
   }
 
+  const editTaskForm = document.getElementById("editTaskForm");
+  if (editTaskForm) {
+    editTaskForm.addEventListener("submit", handleEditTask);
+  }
+
   const searchInput = document.getElementById("searchInput");
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
@@ -83,6 +90,43 @@ function setupEventListeners() {
     statusFilter.addEventListener("change", () => {
       renderTasks(tasks);
     });
+  }
+}
+
+// Load all users for assignee dropdown
+async function loadUsers() {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch('/api/users', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      allUsers = await response.json();
+      populateAssigneeDropdowns();
+    }
+  } catch (error) {
+    console.error('Error loading users:', error);
+  }
+}
+
+// Populate assignee dropdowns with users
+function populateAssigneeDropdowns() {
+  const addDropdown = document.getElementById('taskAssignee');
+  const editDropdown = document.getElementById('editTaskAssignee');
+  
+  const options = '<option value="">Select user (optional)</option>' + 
+    allUsers.map(user => 
+      `<option value="${user._id}">${user.name || user.email}</option>`
+    ).join('');
+  
+  if (addDropdown) {
+    addDropdown.innerHTML = options;
+  }
+  if (editDropdown) {
+    editDropdown.innerHTML = options;
   }
 }
 
@@ -145,7 +189,7 @@ function renderTasks(taskList = [], searchTerm = '') {
   taskTable.innerHTML = '';
 
   if (filtered.length === 0) {
-    taskTable.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No tasks found.</td></tr>';
+    taskTable.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No tasks found.</td></tr>';
     return;
   }
 
@@ -194,6 +238,15 @@ function createTaskRow(task) {
   
   const assigneeName = task.assignee?.name || task.assignee?.email || 'Unassigned';
   const projectName = task.project?.title || 'No Project';
+  const assignedDate = task.startDate ? new Date(task.startDate).toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  }) : (task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  }) : 'N/A');
   const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { 
     year: 'numeric', 
     month: 'short', 
@@ -216,6 +269,7 @@ function createTaskRow(task) {
         </small>
       </td>
       <td>${assigneeName}</td>
+      <td>${assignedDate}</td>
       <td>${dueDate}</td>
       <td><span class="badge bg-${priorityColor}">${(task.priority || 'Medium').toUpperCase()}</span></td>
       <td><span class="badge bg-${statusColor}">${statusDisplay}</span></td>
@@ -244,6 +298,7 @@ async function handleAddTask(e) {
   const taskTitle = document.getElementById('taskTitle').value;
   const taskDescription = document.getElementById('taskDescription').value;
   const taskAssignee = document.getElementById('taskAssignee').value;
+  const taskAssignedDate = document.getElementById('taskAssignedDate').value;
   const taskDueDate = document.getElementById('taskDueDate').value;
   const taskPriority = document.getElementById('taskPriority').value;
   const taskStatus = document.getElementById('taskStatus').value;
@@ -251,7 +306,8 @@ async function handleAddTask(e) {
   const taskData = {
     title: taskTitle,
     description: taskDescription,
-    assignee: taskAssignee,
+    assignee: taskAssignee || null, // Send null if no user selected
+    startDate: taskAssignedDate,
     dueDate: taskDueDate,
     priority: taskPriority.toLowerCase(),
     status: taskStatus
@@ -272,6 +328,7 @@ async function handleAddTask(e) {
       const newTask = await response.json();
       tasks.push(newTask);
       renderTasks(tasks);
+      updateTaskStats();
       e.target.reset();
 
       // Close modal if using Bootstrap
@@ -346,7 +403,10 @@ async function openEditTaskModal(taskId) {
     // Populate the edit form
     document.getElementById('editTaskTitle').value = task.title || '';
     document.getElementById('editTaskDescription').value = task.description || '';
-    document.getElementById('editTaskAssignee').value = task.assignee?.name || task.assignee?.email || '';
+    // Set assignee dropdown to the user ID
+    const assigneeId = task.assignee?._id || task.assignee || '';
+    document.getElementById('editTaskAssignee').value = assigneeId;
+    document.getElementById('editTaskAssignedDate').value = task.startDate ? task.startDate.split('T')[0] : '';
     document.getElementById('editTaskDueDate').value = task.dueDate ? task.dueDate.split('T')[0] : '';
     document.getElementById('editTaskPriority').value = (task.priority || 'Medium');
     
@@ -371,14 +431,6 @@ async function openEditTaskModal(taskId) {
   }
 }
 
-// Handle Edit Task Form Submission
-document.addEventListener('DOMContentLoaded', function() {
-  const editTaskForm = document.getElementById('editTaskForm');
-  if (editTaskForm) {
-    editTaskForm.addEventListener('submit', handleEditTask);
-  }
-});
-
 async function handleEditTask(e) {
   e.preventDefault();
 
@@ -391,6 +443,7 @@ async function handleEditTask(e) {
   const taskTitle = document.getElementById('editTaskTitle').value;
   const taskDescription = document.getElementById('editTaskDescription').value;
   const taskAssignee = document.getElementById('editTaskAssignee').value;
+  const taskAssignedDate = document.getElementById('editTaskAssignedDate').value;
   const taskDueDate = document.getElementById('editTaskDueDate').value;
   const taskPriority = document.getElementById('editTaskPriority').value;
   const taskStatus = document.getElementById('editTaskStatus').value;
@@ -398,7 +451,8 @@ async function handleEditTask(e) {
   const taskData = {
     title: taskTitle,
     description: taskDescription,
-    assignee: taskAssignee,
+    assignee: taskAssignee || null, // Send null if no user selected
+    startDate: taskAssignedDate,
     dueDate: taskDueDate,
     priority: taskPriority,
     status: taskStatus

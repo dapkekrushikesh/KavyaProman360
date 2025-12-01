@@ -139,6 +139,7 @@
             <tr>
               <th>Task</th>
               <th>Assigned To</th>
+              <th>Assigned Date</th>
               <th>Due Date</th>
               <th>Priority</th>
               <th>Status</th>
@@ -177,7 +178,13 @@
 
           <!-- Assigned To -->
           <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Assigned To</label>
-          <input type="text" id="taskAssignee" name="assignee" class="form-control" placeholder="Enter assignee name" style="margin-bottom:15px;">
+          <select id="taskAssignee" name="assignee" class="form-select" style="margin-bottom:15px;">
+            <option value="">Select user (optional)</option>
+          </select>
+
+          <!-- Assigned Date -->
+          <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Assigned Date</label>
+          <input type="date" id="taskAssignedDate" name="assignedDate" class="form-control" style="margin-bottom:15px;">
 
           <!-- Due Date -->
           <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Due Date</label>
@@ -235,7 +242,13 @@
 
             <!-- Assigned To -->
             <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Assigned To</label>
-            <input type="text" id="editTaskAssignee" name="assignee" class="form-control" placeholder="Enter assignee name" style="margin-bottom:15px;">
+            <select id="editTaskAssignee" name="assignee" class="form-select" style="margin-bottom:15px;">
+              <option value="">Select user (optional)</option>
+            </select>
+
+            <!-- Assigned Date -->
+            <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Assigned Date</label>
+            <input type="date" id="editTaskAssignedDate" name="assignedDate" class="form-control" style="margin-bottom:15px;">
 
             <!-- Due Date -->
             <label style="display:block; font-weight:500; color:#52528c; margin-bottom:6px;">Due Date</label>
