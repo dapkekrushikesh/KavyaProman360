@@ -27,7 +27,7 @@ router.get('/', auth, async (req, res) => {
 // POST create a new event
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, description, date, time, project: projectId } = req.body;
+    const { title, description, date, time, emails, project: projectId, notifyAll } = req.body;
 
     // Check if user is authenticated
     if (!req.user || !req.user._id) {
@@ -44,7 +44,9 @@ router.post('/', auth, async (req, res) => {
 
     // If project is specified, add it and get members
     let projectMembers = [];
-    if (projectId) {
+    let allEmployees = [];
+    
+    if (projectId && projectId !== 'other') {
       const project = await Project.findById(projectId).populate('members', 'email name');
       if (!project) {
         return res.status(404).json({ error: 'Project not found' });
@@ -53,6 +55,10 @@ router.post('/', auth, async (req, res) => {
       eventData.project = projectId;
       eventData.attendees = project.members.map(m => m._id);
       projectMembers = project.members;
+    } else if (notifyAll || projectId === 'other') {
+      // If "Other" is selected or notifyAll flag is true, get all registered employees
+      allEmployees = await User.find({}).select('email name');
+      console.log(`📧 "Other" selected - Will notify all ${allEmployees.length} registered employees`);
     }
 
     const event = new Event(eventData);
@@ -62,13 +68,15 @@ router.post('/', auth, async (req, res) => {
     await event.populate('project', 'title');
     await event.populate('createdBy', 'name email');
 
-    // Send email notifications to project members
+    // Send email notifications to project members, all employees, and additional emails
+    const additionalEmailsCount = (emails && Array.isArray(emails)) ? emails.length : 0;
     const emailNotifications = {
       sent: [],
       failed: [],
-      total: projectMembers.length
+      total: projectMembers.length + allEmployees.length + additionalEmailsCount
     };
 
+    // Send to project members
     if (projectMembers.length > 0) {
       for (const member of projectMembers) {
         // Don't send notification to the creator
@@ -97,6 +105,80 @@ router.post('/', auth, async (req, res) => {
           console.error(`Failed to send email to ${member.email}:`, emailError);
           emailNotifications.failed.push({
             email: member.email,
+            error: emailError.message
+          });
+        }
+      }
+    }
+
+    // Send to all registered employees if "Other" is selected
+    if (allEmployees.length > 0) {
+      console.log(`📧 Sending event notifications to all ${allEmployees.length} employees...`);
+      for (const employee of allEmployees) {
+        // Don't send notification to the creator
+        if (employee._id && req.user._id && employee._id.toString() === req.user._id.toString()) {
+          console.log(`⏭️ Skipping creator: ${employee.email}`);
+          continue;
+        }
+
+        try {
+          await sendEventNotificationMail(
+            employee.email,
+            employee.name,
+            {
+              title: event.title,
+              description: event.description || 'No description provided',
+              date: new Date(event.date).toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              }),
+              time: event.time || 'All day',
+              projectTitle: 'General Event (All Employees)',
+              createdBy: req.user.name || req.user.email
+            }
+          );
+          emailNotifications.sent.push(employee.email);
+          console.log(`✅ Sent to: ${employee.email}`);
+        } catch (emailError) {
+          console.error(`❌ Failed to send email to ${employee.email}:`, emailError);
+          emailNotifications.failed.push({
+            email: employee.email,
+            error: emailError.message
+          });
+        }
+      }
+    }
+
+    // Send to additional emails if provided
+    if (emails && Array.isArray(emails) && emails.length > 0) {
+      for (const email of emails) {
+        if (!email || !email.trim()) continue;
+        
+        try {
+          await sendEventNotificationMail(
+            email,
+            'Guest',
+            {
+              title: event.title,
+              description: event.description || 'No description provided',
+              date: new Date(event.date).toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              }),
+              time: event.time || 'All day',
+              projectTitle: event.project?.title || 'General',
+              createdBy: req.user.name || req.user.email
+            }
+          );
+          emailNotifications.sent.push(email);
+        } catch (emailError) {
+          console.error(`Failed to send email to ${email}:`, emailError);
+          emailNotifications.failed.push({
+            email: email,
             error: emailError.message
           });
         }

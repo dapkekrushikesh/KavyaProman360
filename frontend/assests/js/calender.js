@@ -18,12 +18,14 @@ let projects = [];
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let selectedDateKey = null;
+let eventEmails = []; // Store multiple email addresses
 
 document.addEventListener('DOMContentLoaded', async function() {
   await loadProjects();
   await loadEvents();
   renderCalendar(currentMonth, currentYear);
   setupEventListeners();
+  setupEmailTagsInput();
   disableEventCreationForTeamMembers();
 });
 
@@ -55,6 +57,115 @@ function disableEventCreationForTeamMembers() {
     } catch (error) {
       console.error('Error parsing user data:', error);
     }
+  }
+}
+
+// Setup email tags input functionality
+function setupEmailTagsInput() {
+  const emailInput = document.getElementById('eventEmail');
+  const container = document.getElementById('emailTagsContainer');
+
+  if (!emailInput || !container) return;
+
+  // Handle Enter and comma key
+  emailInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addEmailTag();
+    }
+  });
+
+  // Handle paste
+  emailInput.addEventListener('paste', function(e) {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    const emails = pastedText.split(/[,;\s]+/).filter(e => e.trim());
+    emails.forEach(email => {
+      if (validateEmail(email.trim())) {
+        addEmailTag(email.trim());
+      }
+    });
+  });
+
+  // Handle blur (when clicking outside)
+  emailInput.addEventListener('blur', function() {
+    setTimeout(addEmailTag, 100);
+  });
+}
+
+function validateEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
+function addEmailTag(email = null) {
+  const emailInput = document.getElementById('eventEmail');
+  const container = document.getElementById('emailTagsContainer');
+  
+  const emailValue = email || emailInput.value.trim();
+  
+  if (!emailValue) return;
+  
+  // Validate email
+  if (!validateEmail(emailValue)) {
+    if (emailValue.length > 0) {
+      alert('Please enter a valid email address');
+    }
+    emailInput.value = '';
+    return;
+  }
+  
+  // Check for duplicates
+  if (eventEmails.includes(emailValue)) {
+    alert('This email has already been added');
+    emailInput.value = '';
+    return;
+  }
+  
+  // Add to array
+  eventEmails.push(emailValue);
+  
+  // Create tag element
+  const tag = document.createElement('div');
+  tag.className = 'email-tag';
+  tag.innerHTML = `
+    <span>${emailValue}</span>
+    <span class="email-tag-remove" onclick="removeEmailTag('${emailValue}')">×</span>
+  `;
+  
+  // Insert before input wrapper
+  const inputWrapper = container.querySelector('.email-input-wrapper');
+  container.insertBefore(tag, inputWrapper);
+  
+  // Clear input
+  emailInput.value = '';
+}
+
+function removeEmailTag(email) {
+  const index = eventEmails.indexOf(email);
+  if (index > -1) {
+    eventEmails.splice(index, 1);
+  }
+  
+  // Remove tag element
+  const tags = document.querySelectorAll('.email-tag');
+  tags.forEach(tag => {
+    if (tag.textContent.includes(email)) {
+      tag.remove();
+    }
+  });
+}
+
+function clearEmailTags() {
+  eventEmails = [];
+  const container = document.getElementById('emailTagsContainer');
+  if (container) {
+    const tags = container.querySelectorAll('.email-tag');
+    tags.forEach(tag => tag.remove());
+  }
+  const emailInput = document.getElementById('eventEmail');
+  if (emailInput) {
+    emailInput.value = '';
   }
 }
 
@@ -259,6 +370,7 @@ function openModal(dateKey) {
   document.getElementById("eventDescription").value = "";
   document.getElementById("eventProject").value = "";
   document.getElementById("eventTime").value = "";
+  clearEmailTags();
   
   modal.show();
 }
@@ -279,21 +391,36 @@ async function saveEvent() {
     return;
   }
   
+  // Check if "Other" option is selected (empty value or 'other')
+  const isOtherSelected = !projectId || projectId === '' || projectId === 'other';
+  
   try {
     const token = localStorage.getItem('token');
+    
+    const requestBody = {
+      title,
+      description,
+      date: selectedDateKey,
+      time,
+      emails: eventEmails.length > 0 ? eventEmails : undefined
+    };
+    
+    // Add project or notifyAll flag
+    if (isOtherSelected) {
+      requestBody.project = 'other';
+      requestBody.notifyAll = true;
+      console.log('📧 "Other" selected - Will notify all registered employees');
+    } else {
+      requestBody.project = projectId;
+    }
+    
     const response = await fetch('/api/events', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({
-        title,
-        description,
-        date: selectedDateKey,
-        time,
-        project: projectId || undefined
-      })
+      body: JSON.stringify(requestBody)
     });
     
     if (response.ok) {
@@ -303,7 +430,11 @@ async function saveEvent() {
       // Show notification status
       let message = '✅ Event created successfully!';
       if (result.emailNotifications && result.emailNotifications.sent.length > 0) {
-        message += `\n\n📧 Notifications sent to ${result.emailNotifications.sent.length} member(s)`;
+        if (isOtherSelected) {
+          message += `\n\n📧 Notifications sent to all ${result.emailNotifications.sent.length} registered employee(s)`;
+        } else {
+          message += `\n\n📧 Notifications sent to ${result.emailNotifications.sent.length} member(s)`;
+        }
       }
       if (result.emailNotifications && result.emailNotifications.failed.length > 0) {
         message += `\n\n⚠️ Failed to notify ${result.emailNotifications.failed.length} member(s)`;
@@ -349,6 +480,75 @@ Created by: ${event.createdBy?.name || event.createdBy?.email || 'Unknown'}
   alert(details);
 }
 
+// Function to convert URLs in text to clickable links
+function linkifyText(text) {
+  if (!text) return '';
+  
+  // Regular expression to match URLs
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  
+  // Replace URLs with clickable links and copy button
+  const linkedText = text.replace(urlRegex, function(url) {
+    const urlId = 'url_' + Math.random().toString(36).substr(2, 9);
+    return `
+      <div style="display: inline-flex; align-items: center; gap: 5px; margin: 2px 0;">
+        <a href="${url}" target="_blank" rel="noopener noreferrer" 
+           style="color: #3b3b63; text-decoration: underline; word-break: break-all;"
+           onclick="event.stopPropagation()">
+          <i class="fa-solid fa-link me-1"></i>${url}
+        </a>
+        <button class="btn btn-sm btn-outline-secondary" 
+                style="padding: 2px 6px; font-size: 11px;" 
+                onclick="copyToClipboard('${url.replace(/'/g, "\\'")}'); event.stopPropagation();"
+                title="Copy link">
+          <i class="fa-solid fa-copy"></i>
+        </button>
+      </div>
+    `;
+  });
+  
+  // Also handle email addresses
+  const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
+  return linkedText.replace(emailRegex, function(email) {
+    // Don't convert if it's already part of a link
+    return `<a href="mailto:${email}" 
+               style="color: #3b3b63; text-decoration: underline;"
+               onclick="event.stopPropagation()">
+              ${email}
+            </a>`;
+  });
+}
+
+// Function to copy text to clipboard
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    // Show temporary success message
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #28a745;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      z-index: 10000;
+      animation: slideIn 0.3s ease-out;
+    `;
+    toast.innerHTML = '<i class="fa-solid fa-check me-2"></i>Link copied to clipboard!';
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.animation = 'slideOut 0.3s ease-out';
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
+  }).catch(function(err) {
+    console.error('Failed to copy:', err);
+    alert('Failed to copy link. Please copy manually.');
+  });
+}
+
 function viewAllEvents(dateStr, dayEvents) {
   const modal = new bootstrap.Modal(document.getElementById("viewEventsModal"));
   const container = document.getElementById("eventsListContainer");
@@ -384,6 +584,9 @@ function viewAllEvents(dateStr, dayEvents) {
     const projectName = event.project?.title || 'General';
     const creatorName = event.createdBy?.name || event.createdBy?.email || 'Unknown';
     
+    // Convert description URLs to clickable links
+    const descriptionWithLinks = linkifyText(event.description);
+    
     eventCard.innerHTML = `
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start">
@@ -392,7 +595,11 @@ function viewAllEvents(dateStr, dayEvents) {
               <i class="fa-solid fa-calendar-check me-2" style="color:#3b3b63;"></i>
               ${event.title}
             </h6>
-            ${event.description ? `<p class="card-text text-muted mb-2"><small>${event.description}</small></p>` : ''}
+            ${event.description ? `
+              <div class="card-text text-muted mb-2" style="white-space: pre-wrap; word-break: break-word;">
+                <small>${descriptionWithLinks}</small>
+              </div>
+            ` : ''}
             <div class="d-flex flex-wrap gap-3 mt-2">
               <span class="badge bg-secondary">
                 <i class="fa-solid fa-clock me-1"></i>${event.time || 'All day'}

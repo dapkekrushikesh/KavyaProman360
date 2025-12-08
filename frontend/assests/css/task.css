@@ -161,6 +161,42 @@ position: fixed;
   vertical-align: middle;
 }
 
+/* Status Dropdown Styling */
+.status-dropdown {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background-color: #fff;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-dropdown:hover {
+  border-color: #52528c;
+  box-shadow: 0 0 0 0.2rem rgba(82, 82, 140, 0.15);
+}
+
+.status-dropdown:focus {
+  outline: none;
+  border-color: #52528c;
+  box-shadow: 0 0 0 0.2rem rgba(82, 82, 140, 0.25);
+}
+
+/* Color code the status dropdown options */
+.status-dropdown option[value="todo"] {
+  background-color: #fff3cd;
+}
+
+.status-dropdown option[value="in-progress"] {
+  background-color: #cfe2ff;
+}
+
+.status-dropdown option[value="done"] {
+  background-color: #d1e7dd;
+}
+
 .action-btn {
   width: 36px;
   height: 36px;

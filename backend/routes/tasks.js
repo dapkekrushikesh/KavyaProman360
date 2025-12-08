@@ -261,6 +261,66 @@ router.put('/:id', auth, async (req, res) => {
         }
       }
     }
+
+    // If status changed, send notification to Admin, Project Manager, and Team Lead
+    if (changes['Status']) {
+      try {
+        // Find all users with roles: Admin, Project Manager, or Team Lead
+        const managementUsers = await User.find({
+          role: { $in: ['Admin', 'Project Manager', 'Team Lead'] }
+        });
+
+        // If task has a project, get the project creator to include them
+        let projectCreator = null;
+        if (task.project && task.project._id) {
+          const Project = require('../models/Project');
+          const projectDetails = await Project.findById(task.project._id).populate('createdBy', 'email name role');
+          projectCreator = projectDetails?.createdBy;
+        }
+
+        // Create a set of unique emails to notify (avoid duplicates)
+        const emailsToNotify = new Set();
+        
+        // Add management users
+        managementUsers.forEach(user => {
+          // Don't notify the user who made the change
+          if (user._id.toString() !== req.user._id.toString() && user.email) {
+            emailsToNotify.add(JSON.stringify({ email: user.email, name: user.name, role: user.role }));
+          }
+        });
+
+        // Add project creator if they exist and aren't already included
+        if (projectCreator && projectCreator.email && projectCreator._id.toString() !== req.user._id.toString()) {
+          emailsToNotify.add(JSON.stringify({ email: projectCreator.email, name: projectCreator.name, role: projectCreator.role }));
+        }
+
+        // Send notifications to all relevant users
+        for (const userStr of emailsToNotify) {
+          const user = JSON.parse(userStr);
+          try {
+            await sendTaskUpdateMail(
+              user.email,
+              user.name,
+              {
+                title: task.title,
+                projectTitle: task.project?.title || 'General Task',
+                dueDate: task.dueDate,
+                priority: task.priority || 'Medium',
+                assignee: task.assignee?.name || 'Unassigned'
+              },
+              changes
+            );
+            emailNotifications.sent.push({ email: user.email, type: 'status_change_notification', role: user.role });
+            console.log(`✅ Status change notification sent to ${user.role}: ${user.email}`);
+          } catch (emailError) {
+            console.error(`Failed to send status notification to ${user.email}:`, emailError);
+            emailNotifications.failed.push({ email: user.email, error: emailError.message });
+          }
+        }
+      } catch (error) {
+        console.error('Error sending status change notifications:', error);
+      }
+    }
     
     res.json({ 
       task, 

@@ -1049,3 +1049,41 @@ color: white;
 .ms-1{
   margin-left: 0rem !important;
 }
+
+/* Status Dropdown Styling for Project Details */
+.status-dropdown {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background-color: #fff;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-dropdown:hover {
+  border-color: #52528c;
+  box-shadow: 0 0 0 0.2rem rgba(82, 82, 140, 0.15);
+}
+
+.status-dropdown:focus {
+  outline: none;
+  border-color: #52528c;
+  box-shadow: 0 0 0 0.2rem rgba(82, 82, 140, 0.25);
+}
+
+/* Color code the status dropdown options */
+.status-dropdown option[value="To Do"],
+.status-dropdown option[value="Pending"] {
+  background-color: #fff3cd;
+}
+
+.status-dropdown option[value="In Progress"] {
+  background-color: #cfe2ff;
+}
+
+.status-dropdown option[value="Completed"],
+.status-dropdown option[value="Done"] {
+  background-color: #d1e7dd;
+}

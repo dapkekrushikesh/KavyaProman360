@@ -117,24 +117,39 @@
   <!-- Notification Preferences -->
   <div class="settings-section">
     <h5><i class="fa-solid fa-bell"></i> Notification Preferences</h5>
+    <p class="text-muted mb-3">
+      <small>✨ Settings are automatically saved when you make changes</small>
+    </p>
     <form>
-      <div class="form-check mb-2">
+      <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" id="emailAlerts" checked>
-        <label class="form-check-label" for="emailAlerts">Email alerts for tasks & comments</label>
+        <label class="form-check-label" for="emailAlerts">
+          <strong>Email alerts for tasks & comments</strong>
+          <br>
+          <small class="text-muted">Receive email notifications when tasks are assigned or commented on</small>
+        </label>
       </div>
-      <div class="form-check mb-2">
+      <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" id="projectUpdates">
-        <label class="form-check-label" for="projectUpdates">Project status updates</label>
+        <label class="form-check-label" for="projectUpdates">
+          <strong>Project status updates</strong>
+          <br>
+          <small class="text-muted">Get notified about project milestone changes and updates</small>
+        </label>
       </div>
-      <div class="form-check mb-2">
+      <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" id="weeklySummary" checked>
-        <label class="form-check-label" for="weeklySummary">Weekly progress summary</label>
+        <label class="form-check-label" for="weeklySummary">
+          <strong>Weekly progress summary</strong>
+          <br>
+          <small class="text-muted">Receive a weekly email with your task completion summary</small>
+        </label>
       </div>
     </form>
   </div>
 
   <!-- Appearance Settings -->
-  <div class="settings-section">
+  <!-- <div class="settings-section">
     <h5><i class="fa-solid fa-palette"></i> Appearance</h5>
     <div class="row g-3">
       
@@ -147,29 +162,49 @@
         </select>
       </div>
     </div>
-  </div>
+  </div> -->
 
   <!-- Privacy Settings -->
   <div class="settings-section">
     <h5><i class="fa-solid fa-lock"></i> Privacy Settings</h5>
-    <div class="form-check mb-2">
+    <p class="text-muted mb-3">
+      <small>✨ Settings are automatically saved when you make changes</small>
+    </p>
+    <div class="form-check mb-3">
       <input class="form-check-input" type="checkbox" id="profileVisible" checked>
-      <label class="form-check-label" for="profileVisible">Profile visible to team members</label>
+      <label class="form-check-label" for="profileVisible">
+        <strong>Profile visible to team members</strong>
+        <br>
+        <small class="text-muted">Allow other team members to view your profile information</small>
+      </label>
     </div>
-    <div class="form-check mb-2">
+    <div class="form-check mb-3">
       <input class="form-check-input" type="checkbox" id="dataSharing">
-      <label class="form-check-label" for="dataSharing">Allow data sharing for analytics</label>
+      <label class="form-check-label" for="dataSharing">
+        <strong>Allow data sharing for analytics</strong>
+        <br>
+        <small class="text-muted">Help improve the platform by sharing anonymous usage data</small>
+      </label>
     </div>
-    <div class="form-check mb-2">
+    <div class="form-check mb-3">
       <input class="form-check-input" type="checkbox" id="twoFactor">
-      <label class="form-check-label" for="twoFactor">Enable Two-Factor Authentication</label>
+      <label class="form-check-label" for="twoFactor">
+        <strong>Enable Two-Factor Authentication</strong>
+        <br>
+        <small class="text-muted">Add an extra layer of security to your account (Coming soon)</small>
+      </label>
     </div>
   </div>
 
 
   <!-- Save Button -->
   <div class="text-end">
-    <button class="btn btn-save" id="saveBtn" >Save Changes</button>
+    <p class="text-muted mb-2">
+      <small><i class="fa-solid fa-info-circle me-1"></i>Changes are saved automatically. Use this button to save all settings at once.</small>
+    </p>
+    <button class="btn btn-save" id="saveBtn">
+      <i class="fa-solid fa-floppy-disk me-2"></i>Save All Changes
+    </button>
   </div>
 
 </div>

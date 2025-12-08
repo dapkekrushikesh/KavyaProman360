@@ -7,11 +7,9 @@ if (!localStorage.getItem('token')) {
 
 // Load saved tasks from backend
 let tasks = [];
-let allUsers = [];
 
 document.addEventListener("DOMContentLoaded", function () {
   initializeSidebar();
-  loadUsers();
   loadTasksFromBackend();
   setupEventListeners();
   hideNewTaskButtonForTeamMembers();
@@ -90,43 +88,6 @@ function setupEventListeners() {
     statusFilter.addEventListener("change", () => {
       renderTasks(tasks);
     });
-  }
-}
-
-// Load all users for assignee dropdown
-async function loadUsers() {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch('/api/users', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (response.ok) {
-      allUsers = await response.json();
-      populateAssigneeDropdowns();
-    }
-  } catch (error) {
-    console.error('Error loading users:', error);
-  }
-}
-
-// Populate assignee dropdowns with users
-function populateAssigneeDropdowns() {
-  const addDropdown = document.getElementById('taskAssignee');
-  const editDropdown = document.getElementById('editTaskAssignee');
-  
-  const options = '<option value="">Select user (optional)</option>' + 
-    allUsers.map(user => 
-      `<option value="${user._id}">${user.name || user.email}</option>`
-    ).join('');
-  
-  if (addDropdown) {
-    addDropdown.innerHTML = options;
-  }
-  if (editDropdown) {
-    editDropdown.innerHTML = options;
   }
 }
 
@@ -257,6 +218,13 @@ function createTaskRow(task) {
   const latestComment = task.latestComment || 'No comments yet';
   const commentPreview = latestComment.length > 50 ? latestComment.substring(0, 50) + '...' : latestComment;
 
+  // Create status dropdown with current status selected
+  const statusOptions = `
+    <option value="todo" ${statusValue === 'todo' || statusValue === 'pending' ? 'selected' : ''}>Pending</option>
+    <option value="in-progress" ${statusValue === 'in-progress' || statusValue === 'progress' || statusValue === 'in progress' ? 'selected' : ''}>In Progress</option>
+    <option value="done" ${statusValue === 'done' || statusValue === 'completed' ? 'selected' : ''}>Completed</option>
+  `;
+
   return `
     <tr>
       <td>
@@ -272,7 +240,14 @@ function createTaskRow(task) {
       <td>${assignedDate}</td>
       <td>${dueDate}</td>
       <td><span class="badge bg-${priorityColor}">${(task.priority || 'Medium').toUpperCase()}</span></td>
-      <td><span class="badge bg-${statusColor}">${statusDisplay}</span></td>
+      <td>
+        <select class="form-select form-select-sm status-dropdown" 
+                data-task-id="${task._id}" 
+                onchange="updateTaskStatus('${task._id}', this.value)"
+                style="width: auto; min-width: 130px; font-size: 0.875rem;">
+          ${statusOptions}
+        </select>
+      </td>
       <td>
         <button class="btn btn-sm btn-outline-secondary" onclick="openCommentModal('${task._id}')">
           <i class="fa-solid fa-comment"></i>
@@ -297,16 +272,44 @@ async function handleAddTask(e) {
   // Get form values
   const taskTitle = document.getElementById('taskTitle').value;
   const taskDescription = document.getElementById('taskDescription').value;
-  const taskAssignee = document.getElementById('taskAssignee').value;
+  const taskAssigneeEmail = document.getElementById('taskAssignee').value.trim();
   const taskAssignedDate = document.getElementById('taskAssignedDate').value;
   const taskDueDate = document.getElementById('taskDueDate').value;
   const taskPriority = document.getElementById('taskPriority').value;
   const taskStatus = document.getElementById('taskStatus').value;
 
+  // Find user by email if provided
+  let assigneeId = null;
+  if (taskAssigneeEmail) {
+    try {
+      const token = localStorage.getItem('token');
+      const userRes = await fetch(`/api/users?search=${encodeURIComponent(taskAssigneeEmail)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (userRes.ok) {
+        const users = await userRes.json();
+        if (users.length > 0) {
+          assigneeId = users[0]._id;
+        } else {
+          alert(`❌ User not found: "${taskAssigneeEmail}". Please enter a valid email address of a registered user.`);
+          return;
+        }
+      } else {
+        alert('❌ Error searching for user. Please try again.');
+        return;
+      }
+    } catch (err) {
+      console.error('Error finding user:', err);
+      alert('❌ Error finding user. Please try again.');
+      return;
+    }
+  }
+
   const taskData = {
     title: taskTitle,
     description: taskDescription,
-    assignee: taskAssignee || null, // Send null if no user selected
+    assignee: assigneeId,
     startDate: taskAssignedDate,
     dueDate: taskDueDate,
     priority: taskPriority.toLowerCase(),
@@ -403,9 +406,9 @@ async function openEditTaskModal(taskId) {
     // Populate the edit form
     document.getElementById('editTaskTitle').value = task.title || '';
     document.getElementById('editTaskDescription').value = task.description || '';
-    // Set assignee dropdown to the user ID
-    const assigneeId = task.assignee?._id || task.assignee || '';
-    document.getElementById('editTaskAssignee').value = assigneeId;
+    // Set assignee email in input field
+    const assigneeEmail = task.assignee?.email || '';
+    document.getElementById('editTaskAssignee').value = assigneeEmail;
     document.getElementById('editTaskAssignedDate').value = task.startDate ? task.startDate.split('T')[0] : '';
     document.getElementById('editTaskDueDate').value = task.dueDate ? task.dueDate.split('T')[0] : '';
     document.getElementById('editTaskPriority').value = (task.priority || 'Medium');
@@ -442,16 +445,44 @@ async function handleEditTask(e) {
   // Get form values
   const taskTitle = document.getElementById('editTaskTitle').value;
   const taskDescription = document.getElementById('editTaskDescription').value;
-  const taskAssignee = document.getElementById('editTaskAssignee').value;
+  const taskAssigneeEmail = document.getElementById('editTaskAssignee').value.trim();
   const taskAssignedDate = document.getElementById('editTaskAssignedDate').value;
   const taskDueDate = document.getElementById('editTaskDueDate').value;
   const taskPriority = document.getElementById('editTaskPriority').value;
   const taskStatus = document.getElementById('editTaskStatus').value;
 
+  // Find user by email if provided
+  let assigneeId = null;
+  if (taskAssigneeEmail) {
+    try {
+      const token = localStorage.getItem('token');
+      const userRes = await fetch(`/api/users?search=${encodeURIComponent(taskAssigneeEmail)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (userRes.ok) {
+        const users = await userRes.json();
+        if (users.length > 0) {
+          assigneeId = users[0]._id;
+        } else {
+          alert(`❌ User not found: "${taskAssigneeEmail}". Please enter a valid email address of a registered user.`);
+          return;
+        }
+      } else {
+        alert('❌ Error searching for user. Please try again.');
+        return;
+      }
+    } catch (err) {
+      console.error('Error finding user:', err);
+      alert('❌ Error finding user. Please try again.');
+      return;
+    }
+  }
+
   const taskData = {
     title: taskTitle,
     description: taskDescription,
-    assignee: taskAssignee || null, // Send null if no user selected
+    assignee: assigneeId,
     startDate: taskAssignedDate,
     dueDate: taskDueDate,
     priority: taskPriority,
@@ -495,6 +526,62 @@ async function handleEditTask(e) {
   } catch (error) {
     console.error('Error updating task:', error);
     alert('❌ Error updating task');
+  }
+}
+
+// Update task status (quick update from dropdown)
+async function updateTaskStatus(taskId, newStatus) {
+  try {
+    // Find the task to get its current data
+    const task = tasks.find(t => t._id === taskId);
+    if (!task) {
+      alert('❌ Task not found');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/api/tasks/${taskId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        status: newStatus
+      })
+    });
+
+    if (response.ok) {
+      const updatedTask = await response.json();
+      
+      // Update the task in local array
+      const taskIndex = tasks.findIndex(t => t._id === taskId);
+      if (taskIndex !== -1) {
+        tasks[taskIndex] = updatedTask;
+      }
+
+      // Re-render tasks to update statistics
+      renderTasks(tasks);
+      updateTaskStats();
+
+      // Show success message (brief)
+      const statusNames = {
+        'todo': 'Pending',
+        'in-progress': 'In Progress',
+        'done': 'Completed'
+      };
+      console.log(`✅ Task status updated to: ${statusNames[newStatus] || newStatus}`);
+    } else {
+      const error = await response.json();
+      alert('❌ Failed to update task status: ' + (error.message || 'Unknown error'));
+      // Reload tasks to revert the dropdown
+      await loadTasksFromBackend();
+    }
+  } catch (error) {
+    console.error('Error updating task status:', error);
+    alert('❌ Error updating task status');
+    // Reload tasks to revert the dropdown
+    await loadTasksFromBackend();
   }
 }
 

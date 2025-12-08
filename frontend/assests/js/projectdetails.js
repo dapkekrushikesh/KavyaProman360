@@ -99,10 +99,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     tasks.forEach((task, index) => {
       const row = document.createElement("tr");
+      const currentStatus = task.status || 'To Do';
+      
       row.innerHTML = `
         <td>${task.name || task.title}</td>
         <td>${task.assignedTo || task.assignee}</td>
-        <td>${task.status}</td>
+        <td>
+          <select class="form-select form-select-sm status-dropdown" 
+                  data-task-index="${index}"
+                  style="width: auto; min-width: 130px; font-size: 0.875rem;">
+            <option value="To Do" ${currentStatus === 'To Do' || currentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+            <option value="In Progress" ${currentStatus === 'In Progress' ? 'selected' : ''}>In Progress</option>
+            <option value="Completed" ${currentStatus === 'Completed' || currentStatus === 'Done' ? 'selected' : ''}>Completed</option>
+          </select>
+        </td>
         <td>${task.assignedDate}</td>
         <td>${task.due || task.date}</td>
         <td>
@@ -123,6 +133,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const modal = new bootstrap.Modal(document.getElementById("editTaskModal"));
         modal.show();
+      });
+
+      // Status dropdown change handler
+      row.querySelector(".status-dropdown").addEventListener("change", (e) => {
+        const newStatus = e.target.value;
+        updateTaskStatus(index, newStatus);
       });
 
       // Delete button
@@ -148,6 +164,103 @@ document.addEventListener("DOMContentLoaded", () => {
 
       tableBody.appendChild(row);
     });
+  }
+
+  // Update task status (inline editing)
+  async function updateTaskStatus(index, newStatus) {
+    if (!currentProject) {
+      alert("Project not found");
+      return;
+    }
+
+    const taskToUpdate = tasks[index];
+    
+    // Check if task has an _id (from backend) or if it's localStorage only
+    if (taskToUpdate._id) {
+      // Task is from backend, use API
+      try {
+        const token = localStorage.getItem('token');
+        
+        // Map display status to backend status format
+        let backendStatus = newStatus;
+        if (newStatus === 'Pending') backendStatus = 'todo';
+        if (newStatus === 'In Progress') backendStatus = 'in-progress';
+        if (newStatus === 'Completed') backendStatus = 'done';
+        
+        const response = await fetch(`/api/tasks/${taskToUpdate._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            status: backendStatus
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          
+          // Update local array
+          tasks[index].status = newStatus;
+          
+          // Show notification about email status
+          if (result.emailNotifications) {
+            const sent = result.emailNotifications.sent || 0;
+            if (sent > 0) {
+              console.log(`✅ Task status updated. ${sent} email notification(s) sent to management.`);
+            }
+          }
+          
+          console.log(`✅ Task status updated to: ${newStatus}`);
+          
+          // Re-render to ensure consistency
+          renderTasks();
+          
+          // Update project details if needed
+          if (currentProject) {
+            updateProjectDetails(currentProject);
+          }
+        } else {
+          const error = await response.json();
+          alert(`❌ Failed to update task status: ${error.message || 'Unknown error'}`);
+          // Re-render to revert the dropdown
+          renderTasks();
+        }
+      } catch (error) {
+        console.error('Error updating task status:', error);
+        alert('❌ Error updating task status. Please try again.');
+        // Re-render to revert the dropdown
+        renderTasks();
+      }
+    } else {
+      // Fallback to localStorage for legacy tasks
+      // Update local array
+      tasks[index].status = newStatus;
+
+      // Update localStorage
+      const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+      
+      const taskIndex = allTasks.findIndex(t => 
+        t.project === currentProject.title && 
+        t.name === taskToUpdate.name &&
+        t.assignedTo === taskToUpdate.assignedTo
+      );
+
+      if (taskIndex !== -1) {
+        allTasks[taskIndex].status = newStatus;
+        localStorage.setItem('tasks', JSON.stringify(allTasks));
+        console.log(`✅ Task status updated to: ${newStatus} (localStorage only - no notifications)`);
+      }
+
+      // Re-render to ensure consistency
+      renderTasks();
+      
+      // Update project details if needed
+      if (currentProject) {
+        updateProjectDetails(currentProject);
+      }
+    }
   }
 
   // Save Edit
