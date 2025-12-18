@@ -8,6 +8,7 @@ if (!localStorage.getItem('token')) {
 // Global variables
 let projects = [];
 let currentProject = {};
+let refreshInterval = null;
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
@@ -15,6 +16,27 @@ document.addEventListener('DOMContentLoaded', function() {
   setupEventListeners();
   loadProjectsFromBackend();
   hideNewProjectButtonForTeamMembers();
+  
+  // Auto-refresh project statistics every 10 seconds for real-time updates
+  refreshInterval = setInterval(() => {
+    refreshProjectStatistics();
+  }, 10000);
+  
+  // Listen for task update notifications from other pages
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'taskUpdateNotification' && e.newValue) {
+      // Task was updated on another page or in another tab
+      console.log('📢 Task update detected, refreshing project statistics...');
+      refreshProjectStatistics();
+    }
+  });
+});
+
+// Clean up interval when page unloads
+window.addEventListener('beforeunload', () => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
 });
 
 function hideNewProjectButtonForTeamMembers() {
@@ -94,6 +116,50 @@ function setupEventListeners() {
   }
 }
 
+// Calculate task statistics for projects
+async function calculateProjectStatistics(projectList) {
+  try {
+    const token = localStorage.getItem('token');
+    const tasksResponse = await fetch('/api/tasks', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (tasksResponse.ok) {
+      const allTasks = await tasksResponse.json();
+      
+      // Calculate task statistics for each project
+      return projectList.map(project => {
+        // Filter tasks for this project (handle both populated and non-populated project fields)
+        const projectTasks = allTasks.filter(task => {
+          const taskProjectId = typeof task.project === 'object' && task.project !== null 
+            ? task.project._id 
+            : task.project;
+          return taskProjectId === project._id;
+        });
+        
+        const completedTasks = projectTasks.filter(task => 
+          task.status === 'completed' || task.status === 'Completed' || task.status === 'done'
+        );
+        
+        return {
+          ...project,
+          taskCount: projectTasks.length,
+          completionPercent: projectTasks.length > 0 
+            ? Math.round((completedTasks.length / projectTasks.length) * 100)
+            : 0
+        };
+      });
+    }
+    
+    return projectList;
+  } catch (error) {
+    console.error('Error calculating project statistics:', error);
+    return projectList;
+  }
+}
+
 // Load projects from backend
 async function loadProjectsFromBackend() {
   try {
@@ -113,39 +179,8 @@ async function loadProjectsFromBackend() {
     if (response.ok) {
       projects = await response.json();
       
-      // Fetch tasks for all projects to get real statistics
-      const tasksResponse = await fetch('/api/tasks', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (tasksResponse.ok) {
-        const allTasks = await tasksResponse.json();
-        
-        // Calculate task statistics for each project
-        projects = projects.map(project => {
-          // Filter tasks for this project (handle both populated and non-populated project fields)
-          const projectTasks = allTasks.filter(task => {
-            const taskProjectId = typeof task.project === 'object' && task.project !== null 
-              ? task.project._id 
-              : task.project;
-            return taskProjectId === project._id;
-          });
-          
-          const completedTasks = projectTasks.filter(task => 
-            task.status === 'completed' || task.status === 'Completed' || task.status === 'done'
-          );
-          
-          return {
-            ...project,
-            taskCount: projectTasks.length,
-            completionPercent: projectTasks.length > 0 
-              ? Math.round((completedTasks.length / projectTasks.length) * 100)
-              : 0
-          };
-        });
-      }
+      // Calculate task statistics for all projects
+      projects = await calculateProjectStatistics(projects);
       
       renderProjects(projects);
     } else {
@@ -154,6 +189,87 @@ async function loadProjectsFromBackend() {
   } catch (error) {
     console.error('Error loading projects:', error);
   }
+}
+
+// Refresh project statistics (call this after task changes)
+async function refreshProjectStatistics() {
+  try {
+    // Add visual indicator that stats are updating
+    const container = document.getElementById('projectsGrid');
+    if (container) {
+      container.classList.add('updating-stats');
+    }
+    
+    const token = localStorage.getItem('token');
+    const response = await fetch('/api/projects', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      projects = await response.json();
+      projects = await calculateProjectStatistics(projects);
+      
+      // Re-render without disrupting user (maintain scroll position)
+      const scrollPosition = window.scrollY;
+      renderProjects(projects);
+      window.scrollTo(0, scrollPosition);
+      
+      // Show brief update indicator
+      showUpdateNotification();
+    }
+    
+    // Remove updating indicator
+    if (container) {
+      setTimeout(() => {
+        container.classList.remove('updating-stats');
+      }, 500);
+    }
+  } catch (error) {
+    console.error('Error refreshing project statistics:', error);
+  }
+}
+
+// Show brief notification when stats are updated
+function showUpdateNotification() {
+  // Create or get notification element
+  let notification = document.getElementById('statsUpdateNotification');
+  if (!notification) {
+    notification = document.createElement('div');
+    notification.id = 'statsUpdateNotification';
+    notification.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #28a745;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    `;
+    notification.innerHTML = `
+      <span style="width: 8px; height: 8px; background-color: white; border-radius: 50%; display: inline-block;"></span>
+      Statistics updated
+    `;
+    document.body.appendChild(notification);
+  }
+  
+  // Show notification
+  notification.style.opacity = '1';
+  
+  // Hide after 2 seconds
+  setTimeout(() => {
+    notification.style.opacity = '0';
+  }, 2000);
 }
 
 // Render projects to the UI

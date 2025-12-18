@@ -189,9 +189,13 @@ function populateProjectDropdown() {
   const projectSelect = document.getElementById('eventProject');
   if (!projectSelect) return;
   
-  // Clear existing options except the first one
-  projectSelect.innerHTML = '<option value="">Select project (optional)</option>';
+  // Clear existing options and add default options
+  projectSelect.innerHTML = `
+    <option value="">Select project (optional)</option>
+    <option value="other">Other (Notify All Employees)</option>
+  `;
   
+  // Add all projects
   projects.forEach(project => {
     const option = document.createElement('option');
     option.value = project._id;

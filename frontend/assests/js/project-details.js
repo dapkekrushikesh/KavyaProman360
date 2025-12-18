@@ -1,5 +1,8 @@
 // project-details.js: Handles loading and displaying project details and tasks
 
+let currentProjectId = null;
+let refreshInterval = null;
+
 document.addEventListener('DOMContentLoaded', async function() {
   const params = new URLSearchParams(window.location.search);
   const projectId = params.get('id');
@@ -7,10 +10,46 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.querySelector('.main-content').innerHTML = '<div class="alert alert-danger">Project not found.</div>';
     return;
   }
+  
+  currentProjectId = projectId;
   await loadProjectDetails(projectId);
   await loadProjectTasks(projectId);
   hideNewTaskButtonForTeamMembers();
+  
+  // Auto-refresh project details every 10 seconds for real-time updates
+  refreshInterval = setInterval(() => {
+    refreshProjectDetails();
+  }, 10000);
+  
+  // Listen for task update notifications from other pages
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'taskUpdateNotification' && e.newValue) {
+      // Task was updated on another page or in another tab
+      console.log('📢 Task update detected, refreshing project details...');
+      refreshProjectDetails();
+    }
+  });
 });
+
+// Clean up interval when page unloads
+window.addEventListener('beforeunload', () => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
+});
+
+// Refresh project details without disrupting user
+async function refreshProjectDetails() {
+  if (!currentProjectId) return;
+  
+  try {
+    // Reload project details and tasks silently
+    await loadProjectDetails(currentProjectId, true); // Pass true to indicate silent refresh
+    await loadProjectTasks(currentProjectId, true);
+  } catch (error) {
+    console.error('Error refreshing project details:', error);
+  }
+}
 
 function hideNewTaskButtonForTeamMembers() {
   // Get current user from sessionStorage
@@ -33,7 +72,7 @@ function hideNewTaskButtonForTeamMembers() {
   }
 }
 
-async function loadProjectDetails(projectId) {
+async function loadProjectDetails(projectId, silentRefresh = false) {
   const token = localStorage.getItem('token');
   try {
     const res = await fetch(`/api/projects/${projectId}`, {
@@ -71,6 +110,17 @@ async function loadProjectDetails(projectId) {
     const statusInfo = statusMap[statusText.toLowerCase()] || { text: statusText, bg: '#52528c' };
     statusBadge.textContent = statusInfo.text;
     statusBadge.style.backgroundColor = statusInfo.bg;
+    
+    // Add subtle animation on update for visual feedback
+    if (silentRefresh) {
+      const detailsContainer = document.querySelector('.project-details');
+      if (detailsContainer) {
+        detailsContainer.classList.add('updating-stats');
+        setTimeout(() => {
+          detailsContainer.classList.remove('updating-stats');
+        }, 500);
+      }
+    }
     
     // Update all detail items
     const detailItems = document.querySelectorAll('.detail-item span');
@@ -110,16 +160,20 @@ async function loadProjectDetails(projectId) {
       detailItems[5].textContent = `${completionPercentage}% Complete`;
     }
     
-    console.log('Project loaded:', project);
-    console.log('Tasks:', totalTasks, 'Completed:', completedTasks, 'Progress:', completionPercentage + '%');
+    if (!silentRefresh) {
+      console.log('Project loaded:', project);
+      console.log('Tasks:', totalTasks, 'Completed:', completedTasks, 'Progress:', completionPercentage + '%');
+    }
     
   } catch (err) {
     console.error('Error loading project details:', err);
-    document.querySelector('.main-content').innerHTML = '<div class="alert alert-danger">Could not load project details.</div>';
+    if (!silentRefresh) {
+      document.querySelector('.main-content').innerHTML = '<div class="alert alert-danger">Could not load project details.</div>';
+    }
   }
 }
 
-async function loadProjectTasks(projectId) {
+async function loadProjectTasks(projectId, silentRefresh = false) {
   const token = localStorage.getItem('token');
   try {
     const res = await fetch(`/api/projects/${projectId}/tasks`, {
@@ -390,7 +444,11 @@ document.addEventListener('DOMContentLoaded', function() {
           // Show success message
           alert('✅ Task added successfully!');
           
-          // Reload tasks
+          // Notify other pages about task update
+          notifyTaskUpdate();
+          
+          // Reload tasks and project details to update progress
+          await loadProjectDetails(projectId, true);
           await loadProjectTasks(projectId);
         } else {
           const error = await res.json();
@@ -527,7 +585,11 @@ window.editTask = async function(taskId) {
           // Show success message
           alert('✅ Task updated successfully!');
           
-          // Reload tasks
+          // Notify other pages about task update
+          notifyTaskUpdate();
+          
+          // Reload tasks and project details to update progress
+          await loadProjectDetails(projectId, true);
           await loadProjectTasks(projectId);
         } else {
           const error = await updateRes.json();
@@ -561,9 +623,13 @@ window.deleteTask = async function(taskId) {
       // Show success message
       alert('✅ Task deleted successfully!');
       
-      // Reload tasks
+      // Notify other pages about task update
+      notifyTaskUpdate();
+      
+      // Reload tasks and project details to update progress
       const params = new URLSearchParams(window.location.search);
       const projectId = params.get('id');
+      await loadProjectDetails(projectId, true);
       await loadProjectTasks(projectId);
     } else {
       const error = await res.json();
@@ -574,3 +640,17 @@ window.deleteTask = async function(taskId) {
     alert('❌ Error deleting task: ' + err.message);
   }
 };
+
+// Show real-time indicator when page is active
+function showRealTimeIndicator() {
+  const indicator = document.getElementById('realTimeIndicator');
+  if (indicator) {
+    indicator.style.display = 'inline-flex';
+    indicator.style.alignItems = 'center';
+  }
+}
+
+// Call after page loads
+setTimeout(() => {
+  showRealTimeIndicator();
+}, 1000);

@@ -332,6 +332,10 @@ async function handleAddTask(e) {
       tasks.push(newTask);
       renderTasks(tasks);
       updateTaskStats();
+      
+      // Notify other pages about task update
+      notifyTaskUpdate();
+      
       e.target.reset();
 
       // Close modal if using Bootstrap
@@ -513,6 +517,9 @@ async function handleEditTask(e) {
       renderTasks(tasks);
       updateTaskStats();
 
+      // Notify other pages about task update
+      notifyTaskUpdate();
+
       // Close modal
       const modal = bootstrap.Modal.getInstance(document.getElementById('editTaskModal'));
       if (modal) modal.hide();
@@ -564,6 +571,9 @@ async function updateTaskStatus(taskId, newStatus) {
       renderTasks(tasks);
       updateTaskStats();
 
+      // Notify other pages about task update
+      notifyTaskUpdate();
+
       // Show success message (brief)
       const statusNames = {
         'todo': 'Pending',
@@ -602,6 +612,10 @@ async function deleteTask(taskId) {
       tasks = tasks.filter(t => t._id !== taskId);
       renderTasks(tasks);
       updateTaskStats();
+      
+      // Notify other pages about task update
+      notifyTaskUpdate();
+      
       alert('✅ Task deleted successfully!');
     } else {
       alert('❌ Failed to delete task');
@@ -753,6 +767,17 @@ function updateTaskStats() {
   if (pendingCountEl) pendingCountEl.textContent = pendingCount;
   if (progressCountEl) progressCountEl.textContent = progressCount;
   if (completedCountEl) completedCountEl.textContent = completedCount;
+}
+
+// Notify other pages about task updates (for real-time project statistics)
+function notifyTaskUpdate() {
+  // Use localStorage event to communicate across tabs/pages
+  const timestamp = Date.now();
+  localStorage.setItem('taskUpdateNotification', timestamp.toString());
+  // Remove it immediately to allow repeated notifications
+  setTimeout(() => {
+    localStorage.removeItem('taskUpdateNotification');
+  }, 100);
 }
 
 // Logout function

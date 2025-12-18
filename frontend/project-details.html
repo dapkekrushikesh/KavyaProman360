@@ -42,9 +42,15 @@
     <div class="row">
       <div class="col-lg-12 mx-auto">
         <div class="project-card">
-          <div class="project-header d-flex justify-content-between align-items-center">
+          <div class="project-header d-flex justify-content-between align-items-center" style="position: relative;">
             <h3><i class=""></i>Loading...</h3>
-            <span class="status-badge inprogress" style="display:flex;align-items:center;justify-content:center;padding:15px 18px;border-radius:16px;font-weight:500;background:#52528c;color:#fff;min-width:100px;text-align:center;white-space:nowrap;line-height:1;">Loading...</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="realTimeIndicator" class="badge bg-success" style="display: none; font-size: 10px; padding: 4px 8px;">
+                <span style="display: inline-block; width: 6px; height: 6px; background-color: white; border-radius: 50%; margin-right: 4px; animation: pulse 1.5s ease-in-out infinite;"></span>
+                Live
+              </span>
+              <span class="status-badge inprogress" style="display:flex;align-items:center;justify-content:center;padding:15px 18px;border-radius:16px;font-weight:500;background:#52528c;color:#fff;min-width:100px;text-align:center;white-space:nowrap;line-height:1;">Loading...</span>
+            </div>
           </div>
 
           <div class="project-details mt-3">

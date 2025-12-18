@@ -1087,3 +1087,48 @@ color: white;
 .status-dropdown option[value="Done"] {
   background-color: #d1e7dd;
 }
+
+/* Real-time update animations */
+@keyframes fadeUpdate {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+.updating-stats {
+  animation: fadeUpdate 0.5s ease-in-out;
+}
+
+/* Real-time indicator badge */
+.real-time-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #28a745;
+  color: white;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+}
+
+.real-time-badge.active {
+  display: flex;
+}
+
+.real-time-badge .pulse-dot {
+  width: 6px;
+  height: 6px;
+  background-color: white;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}

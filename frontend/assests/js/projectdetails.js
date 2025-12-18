@@ -214,6 +214,9 @@ document.addEventListener("DOMContentLoaded", () => {
           
           console.log(`✅ Task status updated to: ${newStatus}`);
           
+          // Notify other pages about task update
+          notifyTaskUpdate();
+          
           // Re-render to ensure consistency
           renderTasks();
           
@@ -340,6 +343,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const modal = bootstrap.Modal.getInstance(document.getElementById("addTaskModal"));
     modal.hide();
   });
+
+  // Notify other pages about task updates (for real-time project statistics)
+  function notifyTaskUpdate() {
+    // Use localStorage event to communicate across tabs/pages
+    const timestamp = Date.now();
+    localStorage.setItem('taskUpdateNotification', timestamp.toString());
+    // Remove it immediately to allow repeated notifications
+    setTimeout(() => {
+      localStorage.removeItem('taskUpdateNotification');
+    }, 100);
+  }
 
   // Initial load
   loadProjectData();
