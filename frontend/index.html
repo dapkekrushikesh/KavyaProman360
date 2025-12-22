@@ -54,9 +54,14 @@
           <label for="otp">Enter OTP</label>
           <input type="text" id="otp" placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]{6}" />
           <div class="error-message" id="otp-error"></div>
-          <p style="font-size: 0.85rem; color: #888; margin-top: 5px;">
-            <i class="fa fa-clock"></i> OTP expires in 5 minutes
-          </p>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+            <p style="font-size: 0.85rem; color: #888; margin: 0;">
+              <i class="fa fa-clock"></i> OTP expires in <span id="otp-timer">5:00</span>
+            </p>
+            <button type="button" id="resend-otp-btn" class="resend-otp-btn" disabled>
+              <i class="fa fa-refresh"></i> Resend OTP
+            </button>
+          </div>
         </div>
 
         <button type="submit" class="btn-login" id="login-btn">Login</button>

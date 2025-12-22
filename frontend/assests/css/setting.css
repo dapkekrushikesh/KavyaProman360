@@ -558,3 +558,157 @@ body {
   color: #3b3b63;
   font-weight: 500;
 }
+
+/* Account Settings - Danger Zone */
+.danger-zone {
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    padding: 20px;
+    background-color: rgba(220, 53, 69, 0.05);
+}
+
+.danger-zone h5 {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.danger-zone .alert-danger {
+    border-left: 4px solid #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #bb2d3b;
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+}
+
+/* Password Requirements Text */
+.text-muted small {
+    font-size: 0.85rem;
+}
+
+/* Account Settings Forms */
+.account-settings-section .form-label {
+    font-weight: 500;
+    color: #3b3b63;
+}
+
+.account-settings-section .form-control:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+.account-settings-section .btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.account-settings-section .btn-warning:hover {
+    background-color: #ffb300;
+    border-color: #ffb300;
+    transform: scale(1.02);
+}
+
+/* Delete Account Modal */
+#deleteAccountModal .modal-header {
+    background-color: #dc3545;
+    color: white;
+}
+
+#deleteAccountModal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+#deleteAccountModal .list-group-item {
+    border-left: 3px solid #dc3545;
+}
+
+#deleteAccountModal .alert-warning {
+    border-left: 4px solid #ffc107;
+}
+
+#deleteAccountModal #confirmDeleteBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#deleteAccountModal #delete-error {
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+/* Form Sections Spacing */
+.settings-content hr {
+    margin: 30px 0;
+    border-color: rgba(59, 59, 99, 0.2);
+}
+
+.settings-content .mb-4 h5 {
+    color: #3b3b63;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+/* Responsive adjustments for account settings */
+@media (max-width: 768px) {
+    .danger-zone {
+        padding: 15px;
+    }
+    
+    .account-settings-section .btn {
+        width: 100%;
+        margin-top: 10px;
+    }
+}
+
+/* User Management Table */
+#userManagementSection .table {
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#userManagementSection .table thead {
+    background-color: #6366f1;
+    color: white;
+}
+
+#userManagementSection .table thead th {
+    border: none;
+    font-weight: 600;
+    padding: 12px;
+}
+
+#userManagementSection .table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+#userManagementSection .table tbody tr:hover {
+    background-color: rgba(99, 102, 241, 0.05);
+}
+
+#userManagementSection .table tbody td {
+    vertical-align: middle;
+    padding: 12px;
+}
+
+#userManagementSection .badge {
+    padding: 6px 12px;
+    font-weight: 500;
+}
+
+/* Role Change Modal */
+#changeRoleModal .modal-header {
+    border-bottom: 2px solid #6366f1;
+}
+
+#changeRoleModal .form-select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
+}
+
+#changeRoleModal .badge {
+    font-size: 1rem;
+    padding: 8px 16px;
+}

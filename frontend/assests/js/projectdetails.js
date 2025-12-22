@@ -21,144 +21,249 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveTaskEditBtn = document.getElementById("saveTaskEditBtn");
 
   let currentProject = null;
+  let currentProjectId = null;
   let tasks = [];
-  let currentEditIndex = null;
+  let currentEditTask = null;
+  let refreshInterval = null;
 
-  // Get project name from URL
+  const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman-backend.onrender.com';
+
+  // Get project ID from URL
   const urlParams = new URLSearchParams(window.location.search);
-  const projectName = urlParams.get('project');
-  
-  // Load project data from localStorage
-  function loadProjectData() {
-    const projects = localStorage.getItem('projects');
-    const storedTasks = localStorage.getItem('tasks');
-    
-    if (projects && projectName) {
-      const projectsData = JSON.parse(projects);
-      currentProject = projectsData[decodeURIComponent(projectName)];
-      
-      if (currentProject) {
-        // Update page title and project details
-        // document.getElementById('projectTitle').textContent = currentProject.title; // Keep heading as 'Project Details'
-        updateProjectDetails(currentProject);
+  currentProjectId = urlParams.get('id');
+
+  if (!currentProjectId) {
+    alert('No project ID specified');
+    window.location.href = 'project.html';
+    return;
+  }
+
+  // Load project data from API
+  async function loadProjectData(silentRefresh = false) {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'index.html';
+        return;
       }
-    }
-    
-    if (storedTasks && projectName) {
-      const allTasks = JSON.parse(storedTasks);
-      tasks = allTasks.filter(task => task.project === decodeURIComponent(projectName));
+
+      // Fetch project details
+      const projectResponse = await fetch(`${API_URL}/api/projects/${currentProjectId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!projectResponse.ok) {
+        throw new Error('Failed to load project');
+      }
+
+      currentProject = await projectResponse.json();
+
+      // Fetch tasks for this project
+      const tasksResponse = await fetch(`${API_URL}/api/tasks?projectId=${currentProjectId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!tasksResponse.ok) {
+        throw new Error('Failed to load tasks');
+      }
+
+      tasks = await tasksResponse.json();
+
+      // Update UI
+      updateProjectDetails(currentProject, tasks, silentRefresh);
+      renderTasks();
+      
+      if (!silentRefresh) {
+        // Show real-time indicator
+        const indicator = document.getElementById('realTimeIndicator');
+        if (indicator) {
+          indicator.style.display = 'inline-block';
+        }
+      }
+
+    } catch (error) {
+      console.error('Error loading project data:', error);
+      if (!silentRefresh) {
+        alert('Error loading project data. Please try again.');
+      }
     }
   }
 
-  // Update project details section
-  function updateProjectDetails(project) {
+  // Update project details section with real data
+  function updateProjectDetails(project, projectTasks, silentRefresh = false) {
     const projectCard = document.querySelector('.project-card');
     const projectHeader = projectCard.querySelector('.project-header h3');
     const statusBadge = projectCard.querySelector('.status-badge');
     const detailsDiv = projectCard.querySelector('.project-details');
     
+    // Calculate real statistics
+    const totalTasks = projectTasks.length;
+    const completedTasks = projectTasks.filter(t => 
+      t.status === 'done' || t.status === 'completed' || t.status === 'Completed'
+    ).length;
+    const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
     // Update header and status
-    projectHeader.textContent = project.title;
-    statusBadge.textContent = project.status.charAt(0).toUpperCase() + project.status.slice(1);
-    statusBadge.className = `status-badge ${project.status.toLowerCase()}`;
+    projectHeader.innerHTML = `<i class="fa-solid fa-diagram-project me-2"></i>${project.name}`;
     
-    // Calculate dynamic values
-    const membersCount = project.members ? project.members.length : 1;
+    // Map status to display format
+    let displayStatus = project.status;
+    if (project.status === 'in-progress') displayStatus = 'In Progress';
+    if (project.status === 'not-started') displayStatus = 'Not Started';
+    if (project.status === 'completed') displayStatus = 'Completed';
+    if (project.status === 'on-hold') displayStatus = 'On Hold';
+    
+    statusBadge.textContent = displayStatus;
+    statusBadge.className = `status-badge ${project.status.toLowerCase().replace(' ', '-')}`;
+    
+    // Format dates
+    const formatDate = (dateString) => {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    };
+    
+    // Get team members count
+    const membersCount = project.team && Array.isArray(project.team) ? project.team.length : 0;
     const membersText = membersCount === 1 ? 'Member' : 'Members';
-    const tasksCount = tasks.length;
-    const tasksText = tasksCount === 1 ? 'Task' : 'Tasks';
     
-    // Update details
-    detailsDiv.innerHTML = `
+    // Get created by name
+    const createdByName = project.createdBy?.name || project.createdBy?.email || 'Unknown';
+    
+    // Update details with real data
+    const detailsHTML = `
       <div class="detail-item">
         <i class="fa-solid fa-users"></i>
         <span>${membersCount} ${membersText}</span>
       </div>
       <div class="detail-item">
+        <i class="fa-solid fa-user-tie"></i>
+        <span>Created by: ${createdByName}</span>
+      </div>
+      <div class="detail-item">
         <i class="fa-regular fa-calendar-days"></i>
-        <span>Assigned: ${project.assignedDate || 'N/A'}</span>
+        <span>Start: ${formatDate(project.startDate)}</span>
       </div>
       <div class="detail-item">
         <i class="fa-solid fa-calendar-check"></i>
-        <span>Due: ${project.date || 'N/A'}</span>
+        <span>Due: ${formatDate(project.endDate)}</span>
       </div>
       <div class="detail-item">
         <i class="fa-regular fa-comment-dots"></i>
-        <span>${tasksCount} ${tasksText}</span>
+        <span>${totalTasks} ${totalTasks === 1 ? 'Task' : 'Tasks'}</span>
       </div>
       <div class="detail-item">
         <i class="fa-solid fa-stopwatch"></i>
-        <span>${project.progress || 0}% Complete</span>
+        <span>${completionPercentage}% Complete (${completedTasks}/${totalTasks})</span>
       </div>
     `;
+    
+    if (!silentRefresh) {
+      detailsDiv.innerHTML = detailsHTML;
+    } else {
+      // Smooth update for silent refresh
+      detailsDiv.style.opacity = '0.7';
+      detailsDiv.innerHTML = detailsHTML;
+      setTimeout(() => {
+        detailsDiv.style.opacity = '1';
+      }, 200);
+    }
   }
 
   // Render tasks in the table
   function renderTasks() {
     tableBody.innerHTML = "";
 
-    tasks.forEach((task, index) => {
+    if (tasks.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No tasks yet. Click "New Task" to add one.</td></tr>';
+      return;
+    }
+
+    tasks.forEach((task) => {
       const row = document.createElement("tr");
-      const currentStatus = task.status || 'To Do';
+      
+      // Map backend status to display status
+      let displayStatus = task.status;
+      if (task.status === 'todo') displayStatus = 'To Do';
+      if (task.status === 'in-progress') displayStatus = 'In Progress';
+      if (task.status === 'done') displayStatus = 'Completed';
+      
+      // Format dates
+      const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      };
+      
+      // Get assignee name or email
+      const assigneeName = task.assignedTo?.name || task.assignedTo?.email || task.assignedTo || 'Unassigned';
       
       row.innerHTML = `
-        <td>${task.name || task.title}</td>
-        <td>${task.assignedTo || task.assignee}</td>
+        <td>${task.title || task.name || 'Untitled Task'}</td>
+        <td>${assigneeName}</td>
         <td>
           <select class="form-select form-select-sm status-dropdown" 
-                  data-task-index="${index}"
+                  data-task-id="${task._id}"
                   style="width: auto; min-width: 130px; font-size: 0.875rem;">
-            <option value="To Do" ${currentStatus === 'To Do' || currentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
-            <option value="In Progress" ${currentStatus === 'In Progress' ? 'selected' : ''}>In Progress</option>
-            <option value="Completed" ${currentStatus === 'Completed' || currentStatus === 'Done' ? 'selected' : ''}>Completed</option>
+            <option value="todo" ${task.status === 'todo' ? 'selected' : ''}>To Do</option>
+            <option value="in-progress" ${task.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
+            <option value="done" ${task.status === 'done' ? 'selected' : ''}>Completed</option>
           </select>
         </td>
-        <td>${task.assignedDate}</td>
-        <td>${task.due || task.date}</td>
+        <td>${formatDate(task.createdAt || task.assignedDate)}</td>
+        <td>${formatDate(task.dueDate || task.due)}</td>
         <td>
-          <button class="btn btn-sm edit-btn" style="background:#52528c;color:#fff;">Edit</button>
-          <button class="btn btn-sm btn-danger delete-btn">Delete</button>
+          <button class="btn btn-sm edit-btn" style="background:#52528c;color:#fff;" data-task-id="${task._id}">
+            <i class="fa-solid fa-edit"></i> Edit
+          </button>
+          <button class="btn btn-sm btn-danger delete-btn" data-task-id="${task._id}">
+            <i class="fa-solid fa-trash"></i> Delete
+          </button>
         </td>
       `;
 
       // Edit button
-      row.querySelector(".edit-btn").addEventListener("click", () => {
-        currentEditIndex = index;
-        const t = tasks[index];
-        editTaskName.value = t.name || t.title;
-        editTaskAssignedTo.value = t.assignedTo || t.assignee;
-        editTaskStatus.value = t.status;
-        editTaskAssignedDate.value = t.assignedDate;
-        editTaskDue.value = t.due || t.date;
+      row.querySelector(".edit-btn").addEventListener("click", async () => {
+        currentEditTask = task;
+        
+        editTaskName.value = task.title || task.name || '';
+        
+        // If assignedTo is an object with email, use that; otherwise use the value directly
+        const assigneeEmail = task.assignedTo?.email || task.assignedTo || '';
+        editTaskAssignedTo.value = assigneeEmail;
+        
+        editTaskStatus.value = task.status || 'todo';
+        
+        // Set dates
+        const assignedDate = task.createdAt || task.assignedDate;
+        if (assignedDate) {
+          editTaskAssignedDate.value = new Date(assignedDate).toISOString().split('T')[0];
+        }
+        
+        const dueDate = task.dueDate || task.due;
+        if (dueDate) {
+          editTaskDue.value = new Date(dueDate).toISOString().split('T')[0];
+        }
 
         const modal = new bootstrap.Modal(document.getElementById("editTaskModal"));
         modal.show();
       });
 
       // Status dropdown change handler
-      row.querySelector(".status-dropdown").addEventListener("change", (e) => {
+      row.querySelector(".status-dropdown").addEventListener("change", async (e) => {
         const newStatus = e.target.value;
-        updateTaskStatus(index, newStatus);
+        const taskId = e.target.dataset.taskId;
+        await updateTaskStatus(taskId, newStatus);
       });
 
       // Delete button
-      row.querySelector(".delete-btn").addEventListener("click", () => {
+      row.querySelector(".delete-btn").addEventListener("click", async () => {
         if (confirm("Are you sure you want to delete this task?")) {
-          // Remove from local array
-          tasks.splice(index, 1);
-          
-          // Update localStorage
-          const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-          const updatedTasks = allTasks.filter(t => 
-            !(t.project === currentProject.title && t.name === task.name)
-          );
-          localStorage.setItem('tasks', JSON.stringify(updatedTasks));
-          
-          renderTasks();
-          // Update project details to reflect new task count
-          if (currentProject) {
-            updateProjectDetails(currentProject);
-          }
+          await deleteTask(task._id);
         }
       });
 
@@ -167,181 +272,192 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Update task status (inline editing)
-  async function updateTaskStatus(index, newStatus) {
-    if (!currentProject) {
-      alert("Project not found");
-      return;
-    }
+  async function updateTaskStatus(taskId, newStatus) {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: newStatus
+        })
+      });
 
-    const taskToUpdate = tasks[index];
-    
-    // Check if task has an _id (from backend) or if it's localStorage only
-    if (taskToUpdate._id) {
-      // Task is from backend, use API
-      try {
-        const token = localStorage.getItem('token');
-        
-        // Map display status to backend status format
-        let backendStatus = newStatus;
-        if (newStatus === 'Pending') backendStatus = 'todo';
-        if (newStatus === 'In Progress') backendStatus = 'in-progress';
-        if (newStatus === 'Completed') backendStatus = 'done';
-        
-        const response = await fetch(`/api/tasks/${taskToUpdate._id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            status: backendStatus
-          })
-        });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update task status');
+      }
 
-        if (response.ok) {
-          const result = await response.json();
-          
-          // Update local array
-          tasks[index].status = newStatus;
-          
-          // Show notification about email status
-          if (result.emailNotifications) {
-            const sent = result.emailNotifications.sent || 0;
-            if (sent > 0) {
-              console.log(`✅ Task status updated. ${sent} email notification(s) sent to management.`);
-            }
-          }
-          
-          console.log(`✅ Task status updated to: ${newStatus}`);
-          
-          // Notify other pages about task update
-          notifyTaskUpdate();
-          
-          // Re-render to ensure consistency
-          renderTasks();
-          
-          // Update project details if needed
-          if (currentProject) {
-            updateProjectDetails(currentProject);
-          }
-        } else {
-          const error = await response.json();
-          alert(`❌ Failed to update task status: ${error.message || 'Unknown error'}`);
-          // Re-render to revert the dropdown
-          renderTasks();
+      const result = await response.json();
+      
+      // Show notification about email status
+      if (result.emailNotifications) {
+        const sent = result.emailNotifications.sent || 0;
+        if (sent > 0) {
+          console.log(`✅ Task status updated. ${sent} email notification(s) sent to management.`);
         }
-      } catch (error) {
-        console.error('Error updating task status:', error);
-        alert('❌ Error updating task status. Please try again.');
-        // Re-render to revert the dropdown
-        renderTasks();
       }
-    } else {
-      // Fallback to localStorage for legacy tasks
-      // Update local array
-      tasks[index].status = newStatus;
-
-      // Update localStorage
-      const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
       
-      const taskIndex = allTasks.findIndex(t => 
-        t.project === currentProject.title && 
-        t.name === taskToUpdate.name &&
-        t.assignedTo === taskToUpdate.assignedTo
-      );
-
-      if (taskIndex !== -1) {
-        allTasks[taskIndex].status = newStatus;
-        localStorage.setItem('tasks', JSON.stringify(allTasks));
-        console.log(`✅ Task status updated to: ${newStatus} (localStorage only - no notifications)`);
-      }
-
-      // Re-render to ensure consistency
-      renderTasks();
+      console.log(`✅ Task status updated successfully`);
       
-      // Update project details if needed
-      if (currentProject) {
-        updateProjectDetails(currentProject);
+      // Notify other pages about task update
+      notifyTaskUpdate();
+      
+      // Reload data to get updated statistics
+      await loadProjectData(true);
+      
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      alert(`Error: ${error.message}`);
+      // Reload to revert changes
+      await loadProjectData(true);
+    }
+  }
+
+  // Delete task
+  async function deleteTask(taskId) {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete task');
       }
+
+      console.log('✅ Task deleted successfully');
+      
+      // Notify other pages about task update
+      notifyTaskUpdate();
+      
+      // Reload data
+      await loadProjectData();
+      
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert(`Error: ${error.message}`);
     }
   }
 
   // Save Edit
-  saveTaskEditBtn.addEventListener("click", () => {
-    if (currentEditIndex !== null && currentProject) {
-      const updatedTask = {
-        name: editTaskName.value,
-        assignedTo: editTaskAssignedTo.value,
-        status: editTaskStatus.value,
-        assignedDate: editTaskAssignedDate.value,
-        due: editTaskDue.value,
-        project: currentProject.title
-      };
+  saveTaskEditBtn.addEventListener("click", async () => {
+    if (!currentEditTask || !currentProject) {
+      alert("Task not found");
+      return;
+    }
 
-      // Update local array
-      tasks[currentEditIndex] = updatedTask;
+    const updatedData = {
+      title: editTaskName.value.trim(),
+      assignedTo: editTaskAssignedTo.value.trim(),
+      status: editTaskStatus.value,
+      dueDate: editTaskDue.value
+    };
+
+    if (!updatedData.title || !updatedData.assignedTo || !updatedData.dueDate) {
+      alert("Please fill all required fields");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
       
-      // Update localStorage
-      const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-      const taskIndex = allTasks.findIndex(t => 
-        t.project === currentProject.title && 
-        t.name === (tasks[currentEditIndex].name || tasks[currentEditIndex].title)
-      );
-      
-      if (taskIndex !== -1) {
-        allTasks[taskIndex] = updatedTask;
-        localStorage.setItem('tasks', JSON.stringify(allTasks));
+      const response = await fetch(`${API_URL}/api/tasks/${currentEditTask._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update task');
       }
+
+      console.log('✅ Task updated successfully');
       
-      renderTasks();
-      // Update project details to reflect any changes
-      if (currentProject) {
-        updateProjectDetails(currentProject);
-      }
+      // Notify other pages
+      notifyTaskUpdate();
       
+      // Close modal
       const modal = bootstrap.Modal.getInstance(document.getElementById("editTaskModal"));
       modal.hide();
+      
+      // Reload data
+      await loadProjectData();
+      
+    } catch (error) {
+      console.error('Error updating task:', error);
+      alert(`Error: ${error.message}`);
     }
   });
 
   // Add Task
-  saveTaskAddBtn.addEventListener("click", () => {
+  saveTaskAddBtn.addEventListener("click", async () => {
     if (!currentProject) {
       alert("Project not found");
       return;
     }
 
     const newTask = {
-      name: addTaskName.value,
-      assignedTo: addTaskAssignedTo.value,
+      title: addTaskName.value.trim(),
+      description: '', // Optional
+      projectId: currentProjectId,
+      assignedTo: addTaskAssignedTo.value.trim(),
       status: addTaskStatus.value,
-      assignedDate: addTaskAssignedDate.value,
-      due: addTaskDue.value,
-      project: currentProject.title
+      dueDate: addTaskDue.value
     };
 
-    if (!newTask.name || !newTask.assignedTo || !newTask.assignedDate || !newTask.due) {
-      alert("Please fill all fields");
+    if (!newTask.title || !newTask.assignedTo || !newTask.dueDate) {
+      alert("Please fill all required fields");
       return;
     }
 
-    // Add to local array
-    tasks.push(newTask);
-    
-    // Add to localStorage
-    const allTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    allTasks.push(newTask);
-    localStorage.setItem('tasks', JSON.stringify(allTasks));
-    
-    renderTasks();
-    // Update project details to reflect new task count
-    if (currentProject) {
-      updateProjectDetails(currentProject);
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/api/tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newTask)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create task');
+      }
+
+      console.log('✅ Task created successfully');
+      
+      // Notify other pages
+      notifyTaskUpdate();
+      
+      // Close modal and reset form
+      addTaskForm.reset();
+      const modal = bootstrap.Modal.getInstance(document.getElementById("addTaskModal"));
+      modal.hide();
+      
+      // Reload data
+      await loadProjectData();
+      
+    } catch (error) {
+      console.error('Error creating task:', error);
+      alert(`Error: ${error.message}`);
     }
-    
-    addTaskForm.reset();
-    const modal = bootstrap.Modal.getInstance(document.getElementById("addTaskModal"));
-    modal.hide();
   });
 
   // Notify other pages about task updates (for real-time project statistics)
@@ -355,7 +471,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 100);
   }
 
+  // Refresh project details silently in the background
+  async function refreshProjectDetails() {
+    await loadProjectData(true);
+  }
+
+  // Auto-refresh every 10 seconds
+  function startAutoRefresh() {
+    refreshInterval = setInterval(refreshProjectDetails, 10000);
+  }
+
+  // Stop auto-refresh when leaving page
+  window.addEventListener('beforeunload', () => {
+    if (refreshInterval) {
+      clearInterval(refreshInterval);
+    }
+  });
+
+  // Listen for task updates from other pages/tabs
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'taskUpdateNotification') {
+      console.log('Task update detected from another page, refreshing...');
+      refreshProjectDetails();
+    }
+  });
+
   // Initial load
-  loadProjectData();
-  renderTasks();
+  loadProjectData().then(() => {
+    // Start auto-refresh after initial load
+    startAutoRefresh();
+  });
 });

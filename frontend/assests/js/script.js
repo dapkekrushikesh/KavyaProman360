@@ -11,9 +11,94 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const otpSection = document.getElementById("otp-section");
   const loginBtn = document.getElementById("login-btn");
+  const resendOtpBtn = document.getElementById("resend-otp-btn");
+  const otpTimerEl = document.getElementById("otp-timer");
 
   let otpRequested = false;
   let userEmail = "";
+  let otpTimer = null;
+  let timeRemaining = 300; // 5 minutes in seconds
+
+  // Timer function
+  function startOtpTimer() {
+    timeRemaining = 300; // Reset to 5 minutes
+    if (resendOtpBtn) {
+      resendOtpBtn.disabled = true;
+    }
+    
+    if (otpTimer) clearInterval(otpTimer);
+    
+    otpTimer = setInterval(() => {
+      timeRemaining--;
+      
+      // Update timer display
+      const minutes = Math.floor(timeRemaining / 60);
+      const seconds = timeRemaining % 60;
+      if (otpTimerEl) {
+        otpTimerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+      
+      // When timer expires
+      if (timeRemaining <= 0) {
+        clearInterval(otpTimer);
+        if (otpTimerEl) {
+          otpTimerEl.textContent = "Expired";
+          otpTimerEl.style.color = "#dc3545";
+        }
+        if (resendOtpBtn) {
+          resendOtpBtn.disabled = false;
+        }
+        if (otpError) {
+          otpError.textContent = "OTP has expired. Please request a new one.";
+        }
+      }
+    }, 1000);
+  }
+
+  // Resend OTP function
+  async function resendOTP() {
+    try {
+      resendOtpBtn.disabled = true;
+      resendOtpBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+      
+      const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
+      const res = await fetch(`${API_URL}/api/auth/request-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail, password: passwordInput.value.trim() })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        // Clear OTP input and error
+        otpInput.value = "";
+        otpError.textContent = "";
+        if (otpTimerEl) {
+          otpTimerEl.style.color = "#888";
+        }
+        
+        // Restart timer
+        startOtpTimer();
+        
+        alert("✅ " + (data.message || "New OTP sent successfully!"));
+        resendOtpBtn.innerHTML = '<i class="fa fa-refresh"></i> Resend OTP';
+        resendOtpBtn.disabled = false;
+      } else {
+        otpError.textContent = data.message || "Failed to resend OTP.";
+        resendOtpBtn.innerHTML = '<i class="fa fa-refresh"></i> Resend OTP';
+        resendOtpBtn.disabled = false;
+      }
+    } catch (err) {
+      otpError.textContent = "Server error. Please try again.";
+      resendOtpBtn.innerHTML = '<i class="fa fa-refresh"></i> Resend OTP';
+      resendOtpBtn.disabled = false;
+    }
+  }
+
+  // Attach resend button event
+  if (resendOtpBtn) {
+    resendOtpBtn.addEventListener("click", resendOTP);
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -86,6 +171,9 @@ document.addEventListener("DOMContentLoaded", () => {
             // Disable email and password fields
             emailInput.disabled = true;
             passwordInput.disabled = true;
+            
+            // Start OTP timer
+            startOtpTimer();
             
             // Focus on OTP input
             otpInput.focus();

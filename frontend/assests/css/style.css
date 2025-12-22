@@ -203,6 +203,49 @@ input[type="password"]:focus {
   box-shadow: 0px 10px 20px rgba(90, 96, 229, 0.5);
 }
 
+/* Resend OTP Button */
+.resend-otp-btn {
+  background: transparent;
+  border: 1px solid #52528c;
+  color: #52528c;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.resend-otp-btn:hover {
+  background: #52528c;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(82, 82, 140, 0.3);
+}
+
+.resend-otp-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  border-color: #ccc;
+  color: #999;
+  background: transparent;
+}
+
+.resend-otp-btn:disabled:hover {
+  background: transparent;
+  color: #999;
+  transform: none;
+  box-shadow: none;
+}
+
+.resend-otp-btn i {
+  font-size: 0.9rem;
+}
+
 /* Responsive */
 
 .register-wrapper {
