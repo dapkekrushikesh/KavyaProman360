@@ -28,6 +28,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman-backend.onrender.com';
 
+  // Setup date validation for task forms
+  setupTaskDateValidation();
+
+  function setupTaskDateValidation() {
+    // Add Task Modal Validation
+    if (addTaskAssignedDate && addTaskDue) {
+      // When assigned date changes, set minimum due date
+      addTaskAssignedDate.addEventListener('change', () => {
+        addTaskDue.min = addTaskAssignedDate.value;
+        
+        // If due date is already set and is before assigned date, clear it
+        if (addTaskDue.value && addTaskDue.value < addTaskAssignedDate.value) {
+          addTaskDue.value = '';
+          alert('⚠️ Due date has been cleared because it was before the assigned date. Please select a new due date.');
+        }
+      });
+      
+      // When due date changes, validate it's not before assigned date
+      addTaskDue.addEventListener('change', () => {
+        if (addTaskAssignedDate.value && addTaskDue.value < addTaskAssignedDate.value) {
+          alert('❌ Due date cannot be before the assigned date!');
+          addTaskDue.value = '';
+        }
+      });
+    }
+    
+    // Edit Task Modal Validation
+    if (editTaskAssignedDate && editTaskDue) {
+      // When assigned date changes, set minimum due date
+      editTaskAssignedDate.addEventListener('change', () => {
+        editTaskDue.min = editTaskAssignedDate.value;
+        
+        // If due date is already set and is before assigned date, alert user
+        if (editTaskDue.value && editTaskDue.value < editTaskAssignedDate.value) {
+          alert('⚠️ Warning: Due date is before the assigned date. Please update the due date.');
+          editTaskDue.style.borderColor = 'red';
+        } else {
+          editTaskDue.style.borderColor = '';
+        }
+      });
+      
+      // When due date changes, validate it's not before assigned date
+      editTaskDue.addEventListener('change', () => {
+        if (editTaskAssignedDate.value && editTaskDue.value < editTaskAssignedDate.value) {
+          alert('❌ Due date cannot be before the assigned date!');
+          editTaskDue.value = '';
+        }
+      });
+    }
+  }
+
   // Get project ID from URL
   const urlParams = new URLSearchParams(window.location.search);
   currentProjectId = urlParams.get('id');
@@ -108,17 +159,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     
     // Update header and status
-    projectHeader.innerHTML = `<i class="fa-solid fa-diagram-project me-2"></i>${project.name}`;
+    projectHeader.innerHTML = `<i class="fa-solid fa-diagram-project me-2"></i>${project.title || project.name || 'Untitled Project'}`;
     
     // Map status to display format
-    let displayStatus = project.status;
-    if (project.status === 'in-progress') displayStatus = 'In Progress';
-    if (project.status === 'not-started') displayStatus = 'Not Started';
-    if (project.status === 'completed') displayStatus = 'Completed';
-    if (project.status === 'on-hold') displayStatus = 'On Hold';
+    let displayStatus = project.status || 'active';
+    if (displayStatus === 'active') displayStatus = 'In Progress';
+    if (displayStatus === 'in-progress') displayStatus = 'In Progress';
+    if (displayStatus === 'not-started') displayStatus = 'Not Started';
+    if (displayStatus === 'completed') displayStatus = 'Completed';
+    if (displayStatus === 'on-hold') displayStatus = 'On Hold';
     
     statusBadge.textContent = displayStatus;
-    statusBadge.className = `status-badge ${project.status.toLowerCase().replace(' ', '-')}`;
+    statusBadge.className = `status-badge ${(project.status || 'active').toLowerCase().replace(' ', '-')}`;
     
     // Format dates
     const formatDate = (dateString) => {
@@ -127,8 +179,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     };
     
-    // Get team members count
-    const membersCount = project.team && Array.isArray(project.team) ? project.team.length : 0;
+    // Get team members count - handle both 'team' and 'members' properties
+    const teamArray = project.team || project.members || [];
+    const membersCount = Array.isArray(teamArray) ? teamArray.length : 0;
     const membersText = membersCount === 1 ? 'Member' : 'Members';
     
     // Get created by name
@@ -356,14 +409,24 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const assignedDate = editTaskAssignedDate.value;
+    const dueDate = editTaskDue.value;
+    
+    // Validate dates: due date must not be before assigned date
+    if (assignedDate && dueDate && dueDate < assignedDate) {
+      alert('❌ Due date cannot be before the assigned date!');
+      return;
+    }
+
     const updatedData = {
       title: editTaskName.value.trim(),
       assignedTo: editTaskAssignedTo.value.trim(),
       status: editTaskStatus.value,
-      dueDate: editTaskDue.value
+      assignedDate: assignedDate,
+      dueDate: dueDate
     };
 
-    if (!updatedData.title || !updatedData.assignedTo || !updatedData.dueDate) {
+    if (!updatedData.title || !updatedData.assignedTo) {
       alert("Please fill all required fields");
       return;
     }
@@ -410,16 +473,26 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const assignedDate = addTaskAssignedDate.value;
+    const dueDate = addTaskDue.value;
+    
+    // Validate dates: due date must not be before assigned date
+    if (assignedDate && dueDate && dueDate < assignedDate) {
+      alert('❌ Due date cannot be before the assigned date!');
+      return;
+    }
+
     const newTask = {
       title: addTaskName.value.trim(),
       description: '', // Optional
       projectId: currentProjectId,
       assignedTo: addTaskAssignedTo.value.trim(),
       status: addTaskStatus.value,
-      dueDate: addTaskDue.value
+      assignedDate: assignedDate,
+      dueDate: dueDate
     };
 
-    if (!newTask.title || !newTask.assignedTo || !newTask.dueDate) {
+    if (!newTask.title || !newTask.assignedTo) {
       alert("Please fill all required fields");
       return;
     }

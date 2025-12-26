@@ -7,6 +7,20 @@
       document.getElementById('monthFilter').addEventListener('change', function() {
         loadPerformanceData();
       });
+
+      // Auto-refresh performance data every 30 seconds
+      setInterval(() => {
+        console.log('🔄 Auto-refreshing performance data...');
+        loadPerformanceData();
+      }, 30000);
+
+      // Listen for updates from other pages
+      window.addEventListener('storage', function(e) {
+        if (e.key === 'taskUpdateNotification' || e.key === 'projectUpdateNotification') {
+          console.log('🔔 Detected update from another page, refreshing...');
+          loadPerformanceData();
+        }
+      });
     });
 
     async function loadUserProfile() {
@@ -49,36 +63,49 @@
     async function loadPerformanceData() {
       const token = localStorage.getItem('token');
       const monthFilter = document.getElementById('monthFilter').value;
+      const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
       
       if (!token) {
         window.location.href = 'index.html';
         return;
       }
 
+      console.log('📊 Loading performance data from API...');
+
       try {
         // Fetch all users
-        const usersRes = await fetch('/api/users', {
+        const usersRes = await fetch(`${API_URL}/api/users`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        if (!usersRes.ok) throw new Error('Failed to fetch users');
+        if (!usersRes.ok) {
+          if (usersRes.status === 401) {
+            alert('⚠️ Session expired. Please login again.');
+            window.location.href = 'index.html';
+            return;
+          }
+          throw new Error('Failed to fetch users');
+        }
         const allUsers = await usersRes.json();
+        console.log('✅ Loaded users:', allUsers.length);
 
         // Fetch all projects
-        const projectsRes = await fetch('/api/projects', {
+        const projectsRes = await fetch(`${API_URL}/api/projects`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (!projectsRes.ok) throw new Error('Failed to fetch projects');
         const allProjects = await projectsRes.json();
+        console.log('✅ Loaded projects:', allProjects.length);
 
         // Fetch all tasks
-        const tasksRes = await fetch('/api/tasks', {
+        const tasksRes = await fetch(`${API_URL}/api/tasks`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (!tasksRes.ok) throw new Error('Failed to fetch tasks');
         let allTasks = await tasksRes.json();
+        console.log('✅ Loaded tasks:', allTasks.length);
 
         // Filter tasks by month if selected
         if (monthFilter !== 'all') {
@@ -100,6 +127,13 @@
         // Get all assigned employees from projects
         const assignedEmployeeIds = new Set();
         allProjects.forEach(project => {
+          if (project.members && Array.isArray(project.members)) {
+            project.members.forEach(member => {
+              const memberId = member._id || member;
+              assignedEmployeeIds.add(memberId);
+            });
+          }
+          // Also check assignedTo field for backward compatibility
           if (project.assignedTo && Array.isArray(project.assignedTo)) {
             project.assignedTo.forEach(member => {
               const memberId = member._id || member;
@@ -130,7 +164,7 @@
 
         // Calculate task statistics
         allTasks.forEach(task => {
-          const assigneeId = task.assignee?._id || task.assignee;
+          const assigneeId = task.assignee?._id || task.assignee || task.assignedTo?._id || task.assignedTo;
           if (!assigneeId || !employeePerformance[assigneeId]) return;
 
           const employee = employeePerformance[assigneeId];
@@ -142,7 +176,7 @@
             employee.projects.add(projectId);
           }
 
-          // Count by status
+          // Count by status (check both lowercase and original)
           const status = (task.status || '').toLowerCase().trim();
           if (status === 'completed' || status === 'done') {
             employee.completedTasks++;
@@ -155,9 +189,11 @@
           }
 
           // Check if overdue
-          if ((task.dueDate || task.endDate) && status !== 'completed' && status !== 'done') {
-            const dueDate = new Date(task.dueDate || task.endDate);
+          if ((task.dueDate || task.endDate || task.deadline) && status !== 'completed' && status !== 'done') {
+            const dueDate = new Date(task.dueDate || task.endDate || task.deadline);
             const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            dueDate.setHours(0, 0, 0, 0);
             if (dueDate < today) {
               employee.overdueTasks++;
             }
@@ -172,6 +208,8 @@
           employee.projectCount = employee.projects.size;
         });
 
+        console.log('📈 Performance calculated for', Object.keys(employeePerformance).length, 'employees');
+
         // Update summary cards
         updateSummaryCards(employeePerformance);
 
@@ -182,11 +220,11 @@
         renderMonthlyCharts(allTasks, employeePerformance);
 
       } catch (error) {
-        console.error('Error loading performance data:', error);
+        console.error('❌ Error loading performance data:', error);
         document.getElementById('performanceTableBody').innerHTML = `
           <tr>
             <td colspan="9" class="text-center text-danger">
-              <i class="fa-solid fa-exclamation-circle me-2"></i>Failed to load performance data
+              <i class="fa-solid fa-exclamation-circle me-2"></i>Failed to load performance data. ${error.message}
             </td>
           </tr>
         `;

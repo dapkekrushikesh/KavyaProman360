@@ -243,8 +243,101 @@ document.addEventListener("DOMContentLoaded", () => {
   const role = document.querySelector('select[name="role"]');
   const password = document.querySelector('input[placeholder="Enter your password"]');
   const confirmPassword = document.querySelector('input[placeholder="Re-enter password"]');
+  const otpSection = document.getElementById("otp-section");
+  const otpInput = document.getElementById("otp");
+  const otpError = document.getElementById("otp-error");
+  const otpTimerEl = document.getElementById("otp-timer");
+  const resendOtpBtn = document.getElementById("resend-otp-btn");
+  const signupBtn = document.getElementById("signup-btn");
 
   if (!form || !username) return; // Not on signup page
+
+  let otpRequested = false;
+  let otpTimer = null;
+  let timeRemaining = 300; // 5 minutes in seconds
+
+  // Timer function
+  function startOtpTimer() {
+    timeRemaining = 300; // Reset to 5 minutes
+    if (resendOtpBtn) {
+      resendOtpBtn.disabled = true;
+    }
+    
+    if (otpTimer) clearInterval(otpTimer);
+    
+    otpTimer = setInterval(() => {
+      timeRemaining--;
+      
+      // Update timer display
+      const minutes = Math.floor(timeRemaining / 60);
+      const seconds = timeRemaining % 60;
+      if (otpTimerEl) {
+        otpTimerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+      
+      // When timer expires
+      if (timeRemaining <= 0) {
+        clearInterval(otpTimer);
+        if (otpTimerEl) {
+          otpTimerEl.textContent = "Expired";
+          otpTimerEl.style.color = "#dc3545";
+        }
+        if (resendOtpBtn) {
+          resendOtpBtn.disabled = false;
+        }
+        if (otpError) {
+          otpError.textContent = "OTP has expired. Please request a new one.";
+        }
+      }
+    }, 1000);
+  }
+
+  // Resend OTP function
+  async function resendOTP() {
+    try {
+      resendOtpBtn.disabled = true;
+      resendOtpBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+      
+      const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
+      const res = await fetch(`${API_URL}/api/auth/request-signup-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email: email.value.trim()
+        })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        // Clear OTP input and error
+        otpInput.value = "";
+        otpError.textContent = "";
+        if (otpTimerEl) {
+          otpTimerEl.style.color = "#007bff";
+        }
+        
+        // Restart timer
+        startOtpTimer();
+        
+        alert("✅ " + (data.message || "New OTP sent successfully!"));
+        resendOtpBtn.innerHTML = '<i class="fa fa-refresh"></i> Resend OTP';
+        resendOtpBtn.disabled = false;
+      } else {
+        otpError.textContent = data.message || "Failed to resend OTP.";
+        resendOtpBtn.innerHTML = '<i class="fa fa-refresh"></i> Resend OTP';
+        resendOtpBtn.disabled = false;
+      }
+    } catch (err) {
+      otpError.textContent = "Server error. Please try again.";
+      resendOtpBtn.innerHTML = '<i class="fa fa-refresh"></i> Resend OTP';
+      resendOtpBtn.disabled = false;
+    }
+  }
+
+  // Attach resend button event
+  if (resendOtpBtn) {
+    resendOtpBtn.addEventListener("click", resendOTP);
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -256,51 +349,117 @@ document.addEventListener("DOMContentLoaded", () => {
     const passVal = password.value.trim();
     const confirmVal = confirmPassword.value.trim();
 
-    // Validation checks
-    if (!userVal || !emailVal || !roleVal || !passVal || !confirmVal) {
-      alert("⚠️ Please fill in all fields!");
-      return;
-    }
-
-    // Email validation (simple regex)
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(emailVal)) {
-      alert("📧 Invalid email address!");
-      return;
-    }
-
-    // Password length check
-    if (passVal.length < 6) {
-      alert("🔒 Password must be at least 6 characters long!");
-      return;
-    }
-
-    // Confirm password match
-    if (passVal !== confirmVal) {
-      alert("❌ Passwords do not match!");
-      return;
-    }
-
-    try {
-      const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
-      const res = await fetch(`${API_URL}/api/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: userVal, email: emailVal, role: roleVal, password: passVal })
-      });
-      const data = await res.json();
-      
-      if (res.ok && data.token) {
-        localStorage.setItem("token", data.token);
-        alert("✅ Registration successful! Redirecting to login...");
-        form.reset();
-        // Redirect to login page immediately
-        window.location.href = "index.html";
-      } else {
-        alert("❌ " + (data.message || "Registration failed"));
+    // If OTP not requested yet, validate and request OTP
+    if (!otpRequested) {
+      // Validation checks
+      if (!userVal || !emailVal || !roleVal || !passVal || !confirmVal) {
+        alert("⚠️ Please fill in all fields!");
+        return;
       }
-    } catch (err) {
-      alert("Server error. Please try again.");
+
+      // Email validation (simple regex)
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(emailVal)) {
+        alert("📧 Invalid email address!");
+        return;
+      }
+
+      // Password length check
+      if (passVal.length < 6) {
+        alert("🔒 Password must be at least 6 characters long!");
+        return;
+      }
+
+      // Confirm password match
+      if (passVal !== confirmVal) {
+        alert("❌ Passwords do not match!");
+        return;
+      }
+
+      // Request OTP
+      try {
+        signupBtn.disabled = true;
+        signupBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending OTP...';
+
+        const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
+        const res = await fetch(`${API_URL}/api/auth/request-signup-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            name: userVal,
+            email: emailVal, 
+            role: roleVal,
+            password: passVal 
+          })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          otpRequested = true;
+          otpSection.style.display = "block";
+          startOtpTimer();
+          signupBtn.innerHTML = '<i class="fa fa-check"></i> Verify OTP & Register';
+          alert("✅ " + (data.message || "OTP sent to your email!"));
+          
+          // Disable form fields
+          username.disabled = true;
+          email.disabled = true;
+          role.disabled = true;
+          password.disabled = true;
+          confirmPassword.disabled = true;
+        } else {
+          alert("❌ " + (data.message || "Failed to send OTP"));
+        }
+        
+        signupBtn.disabled = false;
+      } catch (err) {
+        alert("Server error. Please try again.");
+        signupBtn.disabled = false;
+        signupBtn.innerHTML = 'Register';
+      }
+    } else {
+      // Verify OTP and complete registration
+      const otpVal = otpInput.value.trim();
+      
+      if (!otpVal || otpVal.length !== 6) {
+        otpError.textContent = "Please enter a valid 6-digit OTP";
+        return;
+      }
+
+      try {
+        signupBtn.disabled = true;
+        signupBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Verifying...';
+
+        const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
+        const res = await fetch(`${API_URL}/api/auth/verify-signup-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            name: userVal,
+            email: emailVal,
+            role: roleVal,
+            password: passVal,
+            otp: otpVal
+          })
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.token) {
+          clearInterval(otpTimer);
+          localStorage.setItem("token", data.token);
+          alert("✅ Registration successful! Redirecting to dashboard...");
+          form.reset();
+          window.location.href = "dashboard.html";
+        } else {
+          otpError.textContent = data.message || "Invalid OTP";
+          signupBtn.disabled = false;
+          signupBtn.innerHTML = '<i class="fa fa-check"></i> Verify OTP & Register';
+        }
+      } catch (err) {
+        otpError.textContent = "Server error. Please try again.";
+        signupBtn.disabled = false;
+        signupBtn.innerHTML = '<i class="fa fa-check"></i> Verify OTP & Register';
+      }
     }
   });
 });

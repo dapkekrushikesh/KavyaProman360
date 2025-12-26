@@ -28,6 +28,9 @@ document.addEventListener("DOMContentLoaded", function () {
       overlay.classList.remove("active");
     });
   }
+  
+  // Add date validation for task forms
+  setupTaskDateValidation();
 });
  
 // =============================
@@ -161,19 +164,83 @@ function renderTasks() {
  
   updateCounts();
 }
- 
+
+// --- Date Validation Setup ---
+function setupTaskDateValidation() {
+  // Add Task Modal Validation
+  const taskAssignedDate = document.getElementById('taskAssignedDate');
+  const taskDueDate = document.getElementById('taskDueDate');
+  
+  if (taskAssignedDate && taskDueDate) {
+    // When assigned date changes, set minimum due date
+    taskAssignedDate.addEventListener('change', () => {
+      taskDueDate.min = taskAssignedDate.value;
+      
+      // If due date is already set and is before assigned date, clear it
+      if (taskDueDate.value && taskDueDate.value < taskAssignedDate.value) {
+        taskDueDate.value = '';
+        alert('⚠️ Due date has been cleared because it was before the assigned date. Please select a new due date.');
+      }
+    });
+    
+    // When due date changes, validate it's not before assigned date
+    taskDueDate.addEventListener('change', () => {
+      if (taskAssignedDate.value && taskDueDate.value < taskAssignedDate.value) {
+        alert('❌ Due date cannot be before the assigned date!');
+        taskDueDate.value = '';
+      }
+    });
+  }
+  
+  // Edit Task Modal Validation
+  const editTaskAssignedDate = document.getElementById('editTaskAssignedDate');
+  const editTaskDueDate = document.getElementById('editTaskDueDate');
+  
+  if (editTaskAssignedDate && editTaskDueDate) {
+    // When assigned date changes, set minimum due date
+    editTaskAssignedDate.addEventListener('change', () => {
+      editTaskDueDate.min = editTaskAssignedDate.value;
+      
+      // If due date is already set and is before assigned date, alert user
+      if (editTaskDueDate.value && editTaskDueDate.value < editTaskAssignedDate.value) {
+        alert('⚠️ Warning: Due date is before the assigned date. Please update the due date.');
+        editTaskDueDate.style.borderColor = 'red';
+      } else {
+        editTaskDueDate.style.borderColor = '';
+      }
+    });
+    
+    // When due date changes, validate it's not before assigned date
+    editTaskDueDate.addEventListener('change', () => {
+      if (editTaskAssignedDate.value && editTaskDueDate.value < editTaskAssignedDate.value) {
+        alert('❌ Due date cannot be before the assigned date!');
+        editTaskDueDate.value = '';
+      }
+    });
+  }
+}
  
 // --- Add New Task ---
 document.getElementById("addTaskForm").addEventListener("submit", function (e) {
   e.preventDefault();
  
-  const title = this.querySelector("input[placeholder='Enter task title']").value.trim();
-  const assignee = this.querySelector("input[placeholder='Enter assignee name']").value.trim();
-  const dueDate = this.querySelector("input[type='date']").value;
-  const priority = this.querySelector("select:nth-of-type(1)").value.toLowerCase();
-  const status = this.querySelector("select:nth-of-type(2)").value.toLowerCase();
+  const title = document.getElementById('taskTitle').value.trim();
+  const assignee = document.getElementById('taskAssignee').value.trim();
+  const assignedDate = document.getElementById('taskAssignedDate').value;
+  const dueDate = document.getElementById('taskDueDate').value;
+  const priority = document.getElementById('taskPriority').value.toLowerCase();
+  const status = document.getElementById('taskStatus').value.toLowerCase();
+  
+  // Validate dates: due date must not be before assigned date
+  if (assignedDate && dueDate && dueDate < assignedDate) {
+    alert('❌ Due date cannot be before the assigned date!');
+    return;
+  }
  
-  if (!title || !assignee) return;
+  if (!title) {
+    alert('❌ Task title is required!');
+    return;
+  }
  
   const id = Date.now() + Math.floor(Math.random() * 999);
   tasks.push({ id, title, assignee, dueDate, priority, status, comments: [] });
@@ -264,5 +331,4 @@ statusFilter.addEventListener("change", renderTasks);
  
 // --- Initial Render ---
 renderTasks();
- 
- 
+

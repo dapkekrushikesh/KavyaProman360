@@ -292,6 +292,100 @@ async function sendPasswordResetMail(to, userName, resetUrl, resetToken) {
   }
 }
 
+// Send OTP email for signup verification
+async function sendSignupOTPMail(to, userName, otp) {
+  try {
+    const emailData = {
+      sender: {
+        email: process.env.BREVO_FROM_EMAIL,
+        name: 'KavyaProman360'
+      },
+      to: [{ email: to }],
+      subject: '🎉 Welcome! Your Registration OTP Code',
+      htmlContent: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f7; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 30px 20px; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; font-weight: 600; color: #ffffff; }
+            .content { padding: 30px 20px; }
+            .otp-box { background-color: #fff5f5; border: 3px dashed #dc3545; padding: 25px; margin: 20px 0; border-radius: 8px; text-align: center; }
+            .otp-code { font-size: 40px; font-weight: 700; color: #dc3545; letter-spacing: 10px; font-family: 'Courier New', monospace; text-shadow: 2px 2px 4px rgba(220, 53, 69, 0.1); }
+            .warning-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 6px; }
+            .welcome-text { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 24px; font-weight: 700; margin-bottom: 15px; }
+            .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎉 Welcome to KavyaProman360!</h1>
+              <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.95;">Complete Your Registration</p>
+            </div>
+            <div class="content">
+              <div class="welcome-text">Hello ${userName || 'there'}! 👋</div>
+              <p style="font-size: 16px; color: #495057;">Thank you for joining KavyaProman360! To complete your registration and secure your account, please verify your email address using the OTP below:</p>
+              
+              <div class="otp-box">
+                <p style="margin: 0 0 10px 0; font-size: 14px; color: #dc3545; font-weight: 600;">YOUR REGISTRATION OTP</p>
+                <div class="otp-code">${otp}</div>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Enter this code on the registration page</p>
+              </div>
+
+              <div class="warning-box">
+                <strong>⚠️ Important:</strong> This OTP will expire in <strong>5 minutes</strong> for security reasons. Please complete your registration soon!
+              </div>
+
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                <p style="font-size: 14px; color: #495057; margin: 0 0 10px 0;">
+                  <strong>🛡️ Security Tips:</strong>
+                </p>
+                <ul style="font-size: 14px; color: #6c757d; padding-left: 20px; margin: 0;">
+                  <li>Never share this OTP with anyone</li>
+                  <li>KavyaProman360 will never ask for your OTP via phone or other emails</li>
+                  <li>If you didn't request this registration, please ignore this email</li>
+                  <li>This code can only be used once</li>
+                </ul>
+              </div>
+
+              <div style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; text-align: center;">
+                <p style="font-size: 14px; color: #495057; margin: 0;">
+                  <strong>What's Next?</strong><br>
+                  After verification, you'll have access to powerful project management tools, task tracking, team collaboration, and more!
+                </p>
+              </div>
+            </div>
+            <div class="footer">
+              <p style="margin: 5px 0;">© 2025 KavyaProman360. All rights reserved.</p>
+              <p style="margin: 5px 0; font-size: 12px;">This is an automated email, please do not reply.</p>
+              <p style="margin: 10px 0 0 0; font-size: 12px; color: #999;">
+                Need help? Contact your system administrator.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const response = await axios.post('https://api.brevo.com/v3/smtp/email', emailData, {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log(`✅ Signup OTP email sent to ${to}`);
+    return { success: true, messageId: response.data.messageId };
+  } catch (error) {
+    console.error(`❌ Error sending signup OTP email to ${to}:`, error.response?.data || error.message);
+    throw error;
+  }
+}
+
 // Send OTP email for login verification
 async function sendOTPMail(to, userName, otp) {
   try {
@@ -570,6 +664,7 @@ module.exports = {
   sendProjectAssignmentMail,
   sendEventNotificationMail,
   sendPasswordResetMail,
+  sendSignupOTPMail,
   sendOTPMail,
   sendTaskAssignmentMail,
   sendTaskUpdateMail

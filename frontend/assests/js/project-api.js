@@ -108,6 +108,58 @@ function setupEventListeners() {
     });
   }
 
+  // Add date validation for Add Project Modal
+  const projectAssignedDate = document.getElementById('projectAssignedDate');
+  const projectDeadline = document.getElementById('projectDeadline');
+  
+  if (projectAssignedDate && projectDeadline) {
+    // When assigned date changes, set minimum deadline
+    projectAssignedDate.addEventListener('change', () => {
+      projectDeadline.min = projectAssignedDate.value;
+      
+      // If deadline is already set and is before assigned date, clear it
+      if (projectDeadline.value && projectDeadline.value < projectAssignedDate.value) {
+        projectDeadline.value = '';
+        alert('⚠️ Deadline has been cleared because it was before the assigned date. Please select a new deadline.');
+      }
+    });
+    
+    // When deadline changes, validate it's not before assigned date
+    projectDeadline.addEventListener('change', () => {
+      if (projectAssignedDate.value && projectDeadline.value < projectAssignedDate.value) {
+        alert('❌ Deadline cannot be before the assigned date!');
+        projectDeadline.value = '';
+      }
+    });
+  }
+
+  // Add date validation for Edit Project Modal
+  const editProjectAssignedDate = document.getElementById('editProjectAssignedDate');
+  const editProjectDueDate = document.getElementById('editProjectDueDate');
+  
+  if (editProjectAssignedDate && editProjectDueDate) {
+    // When assigned date changes, set minimum due date
+    editProjectAssignedDate.addEventListener('change', () => {
+      editProjectDueDate.min = editProjectAssignedDate.value;
+      
+      // If due date is already set and is before assigned date, alert user
+      if (editProjectDueDate.value && editProjectDueDate.value < editProjectAssignedDate.value) {
+        alert('⚠️ Warning: Due date is before the assigned date. Please update the due date.');
+        editProjectDueDate.style.borderColor = 'red';
+      } else {
+        editProjectDueDate.style.borderColor = '';
+      }
+    });
+    
+    // When due date changes, validate it's not before assigned date
+    editProjectDueDate.addEventListener('change', () => {
+      if (editProjectAssignedDate.value && editProjectDueDate.value < editProjectAssignedDate.value) {
+        alert('❌ Due date cannot be before the assigned date!');
+        editProjectDueDate.value = '';
+      }
+    });
+  }
+
   const searchInput = document.querySelector('input[placeholder="Search projects..."]');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -383,6 +435,12 @@ async function handleAddProject(e) {
   const projectAssignedDate = document.getElementById('projectAssignedDate').value;
   const projectDeadline = document.getElementById('projectDeadline').value;
 
+  // Validate dates: deadline must not be before assigned date
+  if (projectAssignedDate && projectDeadline && projectDeadline < projectAssignedDate) {
+    alert('❌ Deadline cannot be before the assigned date!');
+    return;
+  }
+
   // Check for duplicate project name (case-insensitive)
   const isDuplicate = projects.some(p => 
     p.title.toLowerCase().trim() === projectName.toLowerCase().trim()
@@ -476,6 +534,12 @@ async function handleEditProject(e) {
   const projectStartDate = document.getElementById('editProjectAssignedDate').value;
   const projectDueDate = document.getElementById('editProjectDueDate').value;
   const projectStatus = document.getElementById('editProjectStatus').value;
+
+  // Validate dates: due date must not be before assigned date
+  if (projectStartDate && projectDueDate && projectDueDate < projectStartDate) {
+    alert('❌ Due date cannot be before the assigned date!');
+    return;
+  }
 
   // Get the current project to retrieve assignedTo members
   const project = projects.find(p => p._id === currentEditProjectId);

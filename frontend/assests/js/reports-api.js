@@ -5,6 +5,8 @@ if (!localStorage.getItem('token')) {
   window.location.href = 'index.html';
 }
 
+const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman-backend.onrender.com';
+
 // Logout function
 function logoutUser() {
   localStorage.removeItem('token');
@@ -15,6 +17,20 @@ document.addEventListener('DOMContentLoaded', function() {
   setupMobileSidebar();
   loadReportsData();
   setupEventListeners();
+  
+  // Auto-refresh reports every 30 seconds
+  setInterval(() => {
+    console.log('🔄 Auto-refreshing reports...');
+    loadReportsData();
+  }, 30000);
+  
+  // Listen for updates from other pages
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'taskUpdateNotification' || e.key === 'projectUpdateNotification') {
+      console.log('📢 Update detected, refreshing reports...');
+      loadReportsData();
+    }
+  });
 });
 
 function setupMobileSidebar() {
@@ -58,11 +74,11 @@ async function loadReportsData() {
     const token = localStorage.getItem('token');
 
     // Load projects and tasks for detailed reports
-    const projectsResponse = await fetch('/api/projects', {
+    const projectsResponse = await fetch(`${API_URL}/api/projects`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    const tasksResponse = await fetch('/api/tasks', {
+    const tasksResponse = await fetch(`${API_URL}/api/tasks`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -87,6 +103,7 @@ async function loadReportsData() {
     renderCharts(tasks, projects);
   } catch (error) {
     console.error('Error loading reports:', error);
+    alert('❌ Failed to load reports data. Please check your connection.');
   }
 }
 
@@ -100,15 +117,21 @@ function updateStatistics(projects, tasks) {
   document.getElementById('totalTasks').textContent = totalTasks;
 
   // Completed Tasks
-  const completedTasks = tasks.filter(t => t.status === 'done' || t.status === 'completed').length;
+  const completedTasks = tasks.filter(t => 
+    t.status === 'done' || t.status === 'completed' || t.status === 'Completed'
+  ).length;
   document.getElementById('completedTasks').textContent = completedTasks;
 
-  // Overdue Tasks (tasks past deadline and not completed)
+  // Overdue Tasks (tasks past due date and not completed)
   const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to midnight for accurate comparison
+  
   const overdueTasks = tasks.filter(t => {
-    if (t.status === 'done' || t.status === 'completed') return false;
-    if (!t.deadline) return false;
-    const deadline = new Date(t.deadline);
+    if (t.status === 'done' || t.status === 'completed' || t.status === 'Completed') return false;
+    const dueDate = t.dueDate || t.deadline || t.due;
+    if (!dueDate) return false;
+    const deadline = new Date(dueDate);
+    deadline.setHours(0, 0, 0, 0);
     return deadline < today;
   }).length;
   document.getElementById('overdueTasks').textContent = overdueTasks;
@@ -185,6 +208,8 @@ function renderReportsTable(projects, tasks) {
 }
 
 function renderCharts(tasks, projects) {
+  console.log('📊 Rendering charts with data:', { tasksCount: tasks.length, projectsCount: projects.length });
+  
   // Calculate task completion trend for the last 7 days
   const last7Days = [];
   const completedByDay = {};
@@ -192,15 +217,15 @@ function renderCharts(tasks, projects) {
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    const dateStr = date.toLocaleDateString();
+    const dateStr = date.toLocaleDateString('en-US');
     last7Days.push(dateStr);
     completedByDay[dateStr] = 0;
   }
 
   // Count completed tasks by day
   tasks.forEach(task => {
-    if (task.status === 'done' || task.status === 'completed') {
-      const completedDate = task.updatedAt ? new Date(task.updatedAt).toLocaleDateString() : null;
+    if (task.status === 'done' || task.status === 'completed' || task.status === 'Completed') {
+      const completedDate = task.updatedAt ? new Date(task.updatedAt).toLocaleDateString('en-US') : null;
       if (completedDate && completedByDay.hasOwnProperty(completedDate)) {
         completedByDay[completedDate]++;
       }
@@ -213,7 +238,7 @@ function renderCharts(tasks, projects) {
     return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
   });
 
-  console.log('Task completion trend:', completionData);
+  console.log('📈 Task completion trend:', { dayLabels, completionData });
 
   // Tasks Chart - Line chart showing completion trend
   const tasksChartEl = document.getElementById("tasksChart");
@@ -337,11 +362,20 @@ function exportReportAsPDF() {
     const timestamp = new Date().toISOString().split('T')[0];
     
     // Calculate statistics
-    const completedTasks = tasks.filter(t => t.status === 'done' || t.status === 'completed').length;
+    const completedTasks = tasks.filter(t => 
+      t.status === 'done' || t.status === 'completed' || t.status === 'Completed'
+    ).length;
+    
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    
     const overdueTasks = tasks.filter(t => {
-      if (t.status === 'done' || t.status === 'completed') return false;
-      if (!t.deadline) return false;
-      return new Date(t.deadline) < new Date();
+      if (t.status === 'done' || t.status === 'completed' || t.status === 'Completed') return false;
+      const dueDate = t.dueDate || t.deadline || t.due;
+      if (!dueDate) return false;
+      const deadline = new Date(dueDate);
+      deadline.setHours(0, 0, 0, 0);
+      return deadline < todayDate;
     }).length;
 
     // Header

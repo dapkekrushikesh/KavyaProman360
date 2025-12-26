@@ -10,8 +10,14 @@ router.get('/', auth, async (req, res) => {
   try {
     const userRole = req.user.role;
     const userId = req.user._id;
+    const { projectId } = req.query; // Get projectId filter from query params
     
     let query = {};
+    
+    // Filter by specific project if projectId is provided
+    if (projectId) {
+      query.project = projectId;
+    }
     
     // Team Members only see tasks assigned to them or tasks in projects they're members of
     if (userRole !== 'Admin' && userRole !== 'Team Lead' && userRole !== 'Project Manager') {
@@ -21,12 +27,19 @@ router.get('/', auth, async (req, res) => {
       const projectIds = userProjects.map(p => p._id);
       
       // Get tasks where user is assignee OR task belongs to user's projects
-      query = {
+      const roleBasedQuery = {
         $or: [
           { assignee: userId },
           { project: { $in: projectIds } }
         ]
       };
+      
+      // Combine with projectId filter if it exists
+      if (projectId) {
+        query = { $and: [{ project: projectId }, roleBasedQuery] };
+      } else {
+        query = roleBasedQuery;
+      }
     }
     
     const tasks = await Task.find(query)

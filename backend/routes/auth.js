@@ -9,7 +9,7 @@ const fs = require('fs');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
 const auth = require('../middleware/auth');
-const { sendPasswordResetMail, sendOTPMail } = require('../utils/mailer-brevo');
+const { sendPasswordResetMail, sendOTPMail, sendSignupOTPMail } = require('../utils/mailer-brevo');
 
 // Configure multer for avatar upload
 const storage = multer.diskStorage({
@@ -67,6 +67,119 @@ router.post('/signup', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/auth/request-signup-otp - Request OTP for signup
+router.post('/request-signup-otp', async (req, res) => {
+  try {
+    const { name, email, role, password } = req.body;
+    
+    // Validate input
+    if (!email || !password || !name) {
+      return res.status(400).json({ message: 'Name, email and password required' });
+    }
+
+    // Email validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      return res.status(400).json({ message: 'Invalid email address' });
+    }
+
+    // Check if user already exists
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) {
+      return res.status(400).json({ message: 'User already exists with this email' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Delete any existing OTPs for this email
+    await OTP.deleteMany({ email: email.toLowerCase() });
+
+    // Save new OTP to database
+    await OTP.create({
+      email: email.toLowerCase(),
+      otp: otp
+    });
+
+    // Send OTP via email using signup-specific template with red heading
+    await sendSignupOTPMail(email, name, otp);
+
+    res.json({ 
+      message: 'OTP sent to your email. Please check your inbox to complete registration.',
+      email: email 
+    });
+  } catch (err) {
+    console.error('Error in request-signup-otp:', err);
+    res.status(500).json({ message: 'Failed to send OTP. Please try again.' });
+  }
+});
+
+// POST /api/auth/verify-signup-otp - Verify OTP and complete signup
+router.post('/verify-signup-otp', async (req, res) => {
+  try {
+    const { name, email, role, password, otp } = req.body;
+
+    // Validate input
+    if (!name || !email || !password || !otp) {
+      return res.status(400).json({ message: 'All fields and OTP required' });
+    }
+
+    // Find OTP in database
+    const otpRecord = await OTP.findOne({ 
+      email: email.toLowerCase(),
+      otp: otp 
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // Check if user already exists (double check)
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
+
+    // Create user
+    const user = await User.create({ 
+      name, 
+      email: email.toLowerCase(), 
+      password: hash, 
+      role: role || 'Team Member' 
+    });
+
+    // Delete used OTP
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id }, 
+      process.env.JWT_SECRET || 'secret', 
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    res.json({ 
+      user: { 
+        id: user._id, 
+        email: user.email, 
+        name: user.name, 
+        role: user.role, 
+        avatar: user.avatar 
+      }, 
+      token,
+      message: 'Registration successful! Welcome to KavyaProman360.' 
+    });
+  } catch (err) {
+    console.error('Error in verify-signup-otp:', err);
+    res.status(500).json({ message: 'Server error during registration' });
   }
 });
 

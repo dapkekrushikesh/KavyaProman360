@@ -102,7 +102,22 @@
             </div>
           </div>
 
-          <button type="submit" class="btn">Register</button>
+          <!-- OTP Section (Initially Hidden) -->
+          <div id="otp-section" style="display: none;">
+            <div class="input-group">
+              <label>Enter OTP</label>
+              <input type="text" id="otp" placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]{6}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+              <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                OTP sent to your email. Valid for <span id="otp-timer" style="font-weight: 600; color: #007bff;">5:00</span>
+              </small>
+              <div id="otp-error" style="color: #dc3545; font-size: 12px; margin-top: 5px;"></div>
+            </div>
+            <button type="button" id="resend-otp-btn" class="btn" style="background: #6c757d; margin-bottom: 10px;" disabled>
+              <i class="fa fa-refresh"></i> Resend OTP
+            </button>
+          </div>
+
+          <button type="submit" id="signup-btn" class="btn">Register</button>
 
           <p class="login-text">Already have an account? <a href="index.html">Login</a></p>
         </form>
