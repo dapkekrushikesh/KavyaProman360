@@ -142,9 +142,19 @@
           }
         });
 
+        // Also add employees who have tasks assigned
+        allTasks.forEach(task => {
+          const assigneeId = task.assignee?._id || task.assignee || task.assignedTo?._id || task.assignedTo;
+          if (assigneeId) {
+            assignedEmployeeIds.add(assigneeId);
+          }
+        });
+
+        console.log('👥 Found employees:', assignedEmployeeIds.size);
+
         // Initialize performance data for assigned employees
         assignedEmployeeIds.forEach(employeeId => {
-          const user = allUsers.find(u => u._id === employeeId);
+          const user = allUsers.find(u => u._id === employeeId || u._id.toString() === employeeId.toString());
           if (user) {
             employeePerformance[employeeId] = {
               name: user.name || 'Unknown',
@@ -159,21 +169,30 @@
               overdueTasks: 0,
               completionRate: 0
             };
+          } else {
+            console.warn('⚠️ User not found for ID:', employeeId);
           }
         });
 
         // Calculate task statistics
         allTasks.forEach(task => {
           const assigneeId = task.assignee?._id || task.assignee || task.assignedTo?._id || task.assignedTo;
-          if (!assigneeId || !employeePerformance[assigneeId]) return;
+          if (!assigneeId) return;
 
-          const employee = employeePerformance[assigneeId];
+          // Find employee performance entry (handle both string and object ID comparison)
+          const employeeEntry = Object.entries(employeePerformance).find(([empId, data]) => {
+            return empId === assigneeId || empId.toString() === assigneeId.toString();
+          });
+
+          if (!employeeEntry) return;
+          
+          const employee = employeeEntry[1];
           employee.totalTasks++;
 
           // Track projects
           const projectId = task.project?._id || task.project;
           if (projectId) {
-            employee.projects.add(projectId);
+            employee.projects.add(projectId.toString());
           }
 
           // Count by status (check both lowercase and original)
@@ -234,10 +253,17 @@
     function updateSummaryCards(employeePerformance) {
       const employees = Object.values(employeePerformance);
       
-      document.getElementById('totalEmployees').textContent = employees.length;
-      document.getElementById('totalCompleted').textContent = employees.reduce((sum, e) => sum + e.completedTasks, 0);
-      document.getElementById('totalInProgress').textContent = employees.reduce((sum, e) => sum + e.inProgressTasks, 0);
-      document.getElementById('totalOverdue').textContent = employees.reduce((sum, e) => sum + e.overdueTasks, 0);
+      const totalEmployees = employees.length;
+      const totalCompleted = employees.reduce((sum, e) => sum + e.completedTasks, 0);
+      const totalInProgress = employees.reduce((sum, e) => sum + e.inProgressTasks, 0);
+      const totalOverdue = employees.reduce((sum, e) => sum + e.overdueTasks, 0);
+      
+      console.log('📊 Summary Stats:', { totalEmployees, totalCompleted, totalInProgress, totalOverdue });
+      
+      document.getElementById('totalEmployees').textContent = totalEmployees;
+      document.getElementById('totalCompleted').textContent = totalCompleted;
+      document.getElementById('totalInProgress').textContent = totalInProgress;
+      document.getElementById('totalOverdue').textContent = totalOverdue;
     }
 
     function renderPerformanceTable(employeePerformance) {
@@ -246,11 +272,13 @@
       const employees = Object.entries(employeePerformance)
         .sort((a, b) => b[1].completionRate - a[1].completionRate);
 
+      console.log('📋 Rendering', employees.length, 'employees in table');
+
       if (employees.length === 0) {
         tbody.innerHTML = `
           <tr>
             <td colspan="9" class="text-center text-muted">
-              <i class="fa-solid fa-users-slash me-2"></i>No employee performance data available
+              <i class="fa-solid fa-users-slash me-2"></i>No employee performance data available. Make sure employees are assigned to projects or tasks.
             </td>
           </tr>
         `;
@@ -302,6 +330,8 @@
 
     function renderMonthlyCharts(allTasks, employeePerformance) {
       const chartsContainer = document.getElementById('monthlyPerformanceCharts');
+      
+      console.log('📅 Rendering monthly charts for', allTasks.length, 'tasks');
       
       // Get last 6 months
       const months = [];

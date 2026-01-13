@@ -5,16 +5,28 @@ const User = require('../models/User');
 
 // GET /api/users?search=...
 router.get('/', auth, async (req, res) => {
-  const { search } = req.query;
-  if (!search) return res.json([]);
-  // Search by email or name (case-insensitive)
-  const users = await User.find({
-    $or: [
-      { email: { $regex: search, $options: 'i' } },
-      { name: { $regex: search, $options: 'i' } }
-    ]
-  });
-  res.json(users);
+  try {
+    const { search } = req.query;
+    
+    // If no search query, return all users (for performance page, etc.)
+    if (!search) {
+      const users = await User.find().select('-password');
+      return res.json(users);
+    }
+    
+    // Search by email or name (case-insensitive)
+    const users = await User.find({
+      $or: [
+        { email: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } }
+      ]
+    }).select('-password');
+    
+    res.json(users);
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /api/users/settings - Get current user's settings

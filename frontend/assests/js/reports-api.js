@@ -73,6 +73,10 @@ async function loadReportsData() {
   try {
     const token = localStorage.getItem('token');
 
+    console.log('=== REPORTS PAGE: Loading data ===');
+    console.log('API URL:', API_URL);
+    console.log('Token exists:', !!token);
+
     // Load projects and tasks for detailed reports
     const projectsResponse = await fetch(`${API_URL}/api/projects`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -82,7 +86,11 @@ async function loadReportsData() {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
+    console.log('Projects response status:', projectsResponse.status);
+    console.log('Tasks response status:', tasksResponse.status);
+
     if (projectsResponse.status === 401 || tasksResponse.status === 401) {
+      console.error('❌ Authentication failed - redirecting to login');
       localStorage.removeItem('token');
       window.location.href = 'index.html';
       return;
@@ -94,33 +102,68 @@ async function loadReportsData() {
     // Store data for export functionality
     currentReportsData = { projects, tasks };
 
-    console.log('Loaded projects:', projects.length);
-    console.log('Loaded tasks:', tasks.length);
+    console.log('✅ Loaded projects:', projects.length);
+    console.log('✅ Loaded tasks:', tasks.length);
+    
+    if (projects.length > 0) {
+      console.log('Sample project:', projects[0]);
+    }
+    if (tasks.length > 0) {
+      console.log('Sample task:', tasks[0]);
+    }
 
     // Calculate statistics
+    console.log('Updating statistics...');
     updateStatistics(projects, tasks);
+    
+    console.log('Rendering reports table...');
     renderReportsTable(projects, tasks);
-    renderCharts(tasks, projects);
+    
+    console.log('Rendering charts...');
+    renderCharts(projects, tasks);
+    
+    console.log('=== REPORTS PAGE: Data loaded successfully ===');
   } catch (error) {
-    console.error('Error loading reports:', error);
+    console.error('❌ Error loading reports:', error);
+    console.error('Error details:', error.message, error.stack);
     alert('❌ Failed to load reports data. Please check your connection.');
   }
 }
 
 function updateStatistics(projects, tasks) {
+  console.log('--- updateStatistics START ---');
+  
   // Total Projects
   const totalProjects = projects.length;
-  document.getElementById('totalProjects').textContent = totalProjects;
+  const totalProjectsEl = document.getElementById('totalProjects');
+  if (totalProjectsEl) {
+    totalProjectsEl.textContent = totalProjects;
+    console.log('✅ Total Projects:', totalProjects);
+  } else {
+    console.error('❌ Element #totalProjects not found');
+  }
 
   // Total Tasks
   const totalTasks = tasks.length;
-  document.getElementById('totalTasks').textContent = totalTasks;
+  const totalTasksEl = document.getElementById('totalTasks');
+  if (totalTasksEl) {
+    totalTasksEl.textContent = totalTasks;
+    console.log('✅ Total Tasks:', totalTasks);
+  } else {
+    console.error('❌ Element #totalTasks not found');
+  }
 
   // Completed Tasks
   const completedTasks = tasks.filter(t => 
     t.status === 'done' || t.status === 'completed' || t.status === 'Completed'
   ).length;
-  document.getElementById('completedTasks').textContent = completedTasks;
+  const completedTasksEl = document.getElementById('completedTasks');
+  if (completedTasksEl) {
+    completedTasksEl.textContent = completedTasks;
+    console.log('✅ Completed Tasks:', completedTasks);
+  } else {
+    console.error('❌ Element #completedTasks not found');
+  }
 
   // Overdue Tasks (tasks past due date and not completed)
   const today = new Date();
@@ -134,17 +177,31 @@ function updateStatistics(projects, tasks) {
     deadline.setHours(0, 0, 0, 0);
     return deadline < today;
   }).length;
-  document.getElementById('overdueTasks').textContent = overdueTasks;
+  
+  const overdueTasksEl = document.getElementById('overdueTasks');
+  if (overdueTasksEl) {
+    overdueTasksEl.textContent = overdueTasks;
+    console.log('✅ Overdue Tasks:', overdueTasks);
+  } else {
+    console.error('❌ Element #overdueTasks not found');
+  }
 
-  console.log('Statistics:', { totalProjects, totalTasks, completedTasks, overdueTasks });
+  console.log('--- updateStatistics END ---');
 }
 
 function renderReportsTable(projects, tasks) {
+  console.log('--- renderReportsTable START ---');
+  
   const table = document.getElementById("reportTable");
-  if (!table) return;
+  if (!table) {
+    console.error('❌ Element #reportTable not found');
+    return;
+  }
 
   const filter = document.getElementById("filterSelect")?.value || "all";
   const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || '';
+
+  console.log('Filter:', filter, 'Search:', searchTerm);
 
   table.innerHTML = "";
 
@@ -171,6 +228,8 @@ function renderReportsTable(projects, tasks) {
     });
   });
 
+  console.log('Total reports before filter:', reports.length);
+
   // Filter and search
   const filtered = reports.filter(r => {
     const matchesFilter = filter === "all" || r.type === filter;
@@ -178,8 +237,12 @@ function renderReportsTable(projects, tasks) {
     return matchesFilter && matchesSearch;
   });
 
+  console.log('Filtered reports:', filtered.length);
+
   if (filtered.length === 0) {
     table.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No reports found</td></tr>';
+    console.log('⚠️ No reports to display');
+    console.log('--- renderReportsTable END ---');
     return;
   }
 
@@ -205,10 +268,14 @@ function renderReportsTable(projects, tasks) {
     `;
     table.appendChild(row);
   });
+  
+  console.log('✅ Table rendered with', filtered.length, 'rows');
+  console.log('--- renderReportsTable END ---');
 }
 
-function renderCharts(tasks, projects) {
-  console.log('📊 Rendering charts with data:', { tasksCount: tasks.length, projectsCount: projects.length });
+function renderCharts(projects, tasks) {
+  console.log('--- renderCharts START ---');
+  console.log('📊 Rendering charts with data:', { projectsCount: projects.length, tasksCount: tasks.length });
   
   // Calculate task completion trend for the last 7 days
   const last7Days = [];
@@ -242,10 +309,17 @@ function renderCharts(tasks, projects) {
 
   // Tasks Chart - Line chart showing completion trend
   const tasksChartEl = document.getElementById("tasksChart");
-  if (tasksChartEl && typeof Chart !== 'undefined') {
+  if (!tasksChartEl) {
+    console.error('❌ Element #tasksChart not found');
+  } else if (typeof Chart === 'undefined') {
+    console.error('❌ Chart.js library not loaded');
+  } else {
+    console.log('✅ Creating tasks line chart...');
+    
     // Destroy existing chart if it exists
     const existingChart = Chart.getChart(tasksChartEl);
     if (existingChart) {
+      console.log('Destroying existing tasks chart');
       existingChart.destroy();
     }
 
@@ -285,20 +359,28 @@ function renderCharts(tasks, projects) {
         }
       }
     });
+    console.log('✅ Tasks line chart created');
   }
 
   // Project Chart - Doughnut chart showing project status
   const projectChartEl = document.getElementById("projectChart");
-  if (projectChartEl && typeof Chart !== 'undefined') {
+  if (!projectChartEl) {
+    console.error('❌ Element #projectChart not found');
+  } else if (typeof Chart === 'undefined') {
+    console.error('❌ Chart.js library not loaded');
+  } else {
+    console.log('✅ Creating project doughnut chart...');
+    
     const activeProjects = projects.filter(p => p.status === 'active' || p.status === 'progress').length;
     const completedProjects = projects.filter(p => p.status === 'completed' || p.status === 'done').length;
     const pendingProjects = projects.filter(p => p.status === 'pending' || p.status === 'todo').length;
 
-    console.log('Project status:', { activeProjects, completedProjects, pendingProjects });
+    console.log('📊 Project status breakdown:', { activeProjects, completedProjects, pendingProjects });
 
     // Destroy existing chart if it exists
     const existingChart = Chart.getChart(projectChartEl);
     if (existingChart) {
+      console.log('Destroying existing project chart');
       existingChart.destroy();
     }
 
@@ -334,7 +416,10 @@ function renderCharts(tasks, projects) {
         }
       }
     });
+    console.log('✅ Project doughnut chart created');
   }
+  
+  console.log('--- renderCharts END ---');
 }
 
 // Export functionality
