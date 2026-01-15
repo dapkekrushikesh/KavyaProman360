@@ -7,6 +7,25 @@ if (!localStorage.getItem('token')) {
 
 const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman-backend.onrender.com';
 
+// Initialize statistics on page load
+window.addEventListener('load', () => {
+  console.log('⚡ Window loaded - initializing default values');
+  const elements = {
+    totalProjects: document.getElementById('totalProjects'),
+    totalTasks: document.getElementById('totalTasks'),
+    completedTasks: document.getElementById('completedTasks'),
+    overdueTasks: document.getElementById('overdueTasks')
+  };
+  
+  // Set initial loading state
+  Object.entries(elements).forEach(([key, el]) => {
+    if (el) {
+      el.textContent = '...';
+      el.style.color = '#999';
+    }
+  });
+});
+
 // Logout function
 function logoutUser() {
   localStorage.removeItem('token');
@@ -14,6 +33,21 @@ function logoutUser() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Reports page loaded');
+  console.log('API_CONFIG available:', typeof window.API_CONFIG !== 'undefined');
+  console.log('API_URL:', API_URL);
+  console.log('Token exists:', !!localStorage.getItem('token'));
+  
+  // Check if DOM elements exist
+  console.log('DOM Elements check:');
+  console.log('- totalProjects:', !!document.getElementById('totalProjects'));
+  console.log('- totalTasks:', !!document.getElementById('totalTasks'));
+  console.log('- completedTasks:', !!document.getElementById('completedTasks'));
+  console.log('- overdueTasks:', !!document.getElementById('overdueTasks'));
+  console.log('- tasksChart:', !!document.getElementById('tasksChart'));
+  console.log('- projectChart:', !!document.getElementById('projectChart'));
+  console.log('- reportTable:', !!document.getElementById('reportTable'));
+  
   setupMobileSidebar();
   loadReportsData();
   setupEventListeners();
@@ -104,12 +138,21 @@ async function loadReportsData() {
 
     console.log('✅ Loaded projects:', projects.length);
     console.log('✅ Loaded tasks:', tasks.length);
+    console.log('📊 Data Summary:');
+    console.log('   - This includes ALL projects and tasks visible to your user role');
+    console.log('   - Admin/Team Lead/Project Manager: See all data');
+    console.log('   - Team Member: See only assigned projects/tasks');
     
     if (projects.length > 0) {
       console.log('Sample project:', projects[0]);
+    } else {
+      console.log('⚠️ No projects found. Please create some projects first.');
     }
+    
     if (tasks.length > 0) {
       console.log('Sample task:', tasks[0]);
+    } else {
+      console.log('⚠️ No tasks found. Please create some tasks first.');
     }
 
     // Calculate statistics
@@ -132,12 +175,15 @@ async function loadReportsData() {
 
 function updateStatistics(projects, tasks) {
   console.log('--- updateStatistics START ---');
+  console.log('Projects data:', projects);
+  console.log('Tasks data:', tasks);
   
   // Total Projects
   const totalProjects = projects.length;
   const totalProjectsEl = document.getElementById('totalProjects');
   if (totalProjectsEl) {
     totalProjectsEl.textContent = totalProjects;
+    totalProjectsEl.style.color = ''; // Reset color
     console.log('✅ Total Projects:', totalProjects);
   } else {
     console.error('❌ Element #totalProjects not found');
@@ -148,6 +194,7 @@ function updateStatistics(projects, tasks) {
   const totalTasksEl = document.getElementById('totalTasks');
   if (totalTasksEl) {
     totalTasksEl.textContent = totalTasks;
+    totalTasksEl.style.color = ''; // Reset color
     console.log('✅ Total Tasks:', totalTasks);
   } else {
     console.error('❌ Element #totalTasks not found');
@@ -160,6 +207,7 @@ function updateStatistics(projects, tasks) {
   const completedTasksEl = document.getElementById('completedTasks');
   if (completedTasksEl) {
     completedTasksEl.textContent = completedTasks;
+    completedTasksEl.style.color = ''; // Reset color
     console.log('✅ Completed Tasks:', completedTasks);
   } else {
     console.error('❌ Element #completedTasks not found');
@@ -181,16 +229,24 @@ function updateStatistics(projects, tasks) {
   const overdueTasksEl = document.getElementById('overdueTasks');
   if (overdueTasksEl) {
     overdueTasksEl.textContent = overdueTasks;
+    overdueTasksEl.style.color = ''; // Reset color
     console.log('✅ Overdue Tasks:', overdueTasks);
   } else {
     console.error('❌ Element #overdueTasks not found');
   }
 
+  console.log('📊 Statistics Summary:', {
+    totalProjects,
+    totalTasks,
+    completedTasks,
+    overdueTasks
+  });
   console.log('--- updateStatistics END ---');
 }
 
 function renderReportsTable(projects, tasks) {
   console.log('--- renderReportsTable START ---');
+  console.log('📋 Input data - Projects:', projects.length, 'Tasks:', tasks.length);
   
   const table = document.getElementById("reportTable");
   if (!table) {
@@ -201,34 +257,44 @@ function renderReportsTable(projects, tasks) {
   const filter = document.getElementById("filterSelect")?.value || "all";
   const searchTerm = document.getElementById("searchInput")?.value.toLowerCase() || '';
 
-  console.log('Filter:', filter, 'Search:', searchTerm);
+  console.log('📋 Filter:', filter, 'Search term:', searchTerm);
 
   table.innerHTML = "";
 
   // Combine projects and tasks for report
   const reports = [];
 
-  projects.forEach(p => {
-    reports.push({
+  console.log('📋 Processing projects...');
+  projects.forEach((p, index) => {
+    const report = {
       date: new Date(p.createdAt).toLocaleDateString(),
       type: 'project',
       title: p.title,
       user: p.createdBy?.name || p.createdBy?.email || 'Unknown',
       status: p.status || 'active'
-    });
+    };
+    reports.push(report);
+    if (index < 2) {
+      console.log(`   Sample project ${index + 1}:`, report);
+    }
   });
 
-  tasks.forEach(t => {
-    reports.push({
+  console.log('📋 Processing tasks...');
+  tasks.forEach((t, index) => {
+    const report = {
       date: new Date(t.createdAt).toLocaleDateString(),
       type: 'task',
       title: t.title,
       user: t.assignee?.name || t.assignee?.email || 'Unassigned',
       status: t.status || 'todo'
-    });
+    };
+    reports.push(report);
+    if (index < 2) {
+      console.log(`   Sample task ${index + 1}:`, report);
+    }
   });
 
-  console.log('Total reports before filter:', reports.length);
+  console.log('📋 Total reports combined:', reports.length);
 
   // Filter and search
   const filtered = reports.filter(r => {
@@ -237,15 +303,24 @@ function renderReportsTable(projects, tasks) {
     return matchesFilter && matchesSearch;
   });
 
-  console.log('Filtered reports:', filtered.length);
+  console.log('📋 After filtering - Matched reports:', filtered.length);
+  
+  if (filtered.length > 0) {
+    console.log('📋 First 3 filtered reports:');
+    filtered.slice(0, 3).forEach((r, i) => {
+      console.log(`   ${i + 1}.`, r);
+    });
+  }
 
   if (filtered.length === 0) {
     table.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No reports found</td></tr>';
-    console.log('⚠️ No reports to display');
+    console.log('⚠️ No reports to display - showing empty message');
     console.log('--- renderReportsTable END ---');
     return;
   }
 
+  console.log('📋 Rendering table rows...');
+  let rowCount = 0;
   filtered.forEach(r => {
     const row = document.createElement("tr");
     const statusMap = {
@@ -267,9 +342,10 @@ function renderReportsTable(projects, tasks) {
       <td><span class="badge bg-${badgeColor}">${displayStatus}</span></td>
     `;
     table.appendChild(row);
+    rowCount++;
   });
   
-  console.log('✅ Table rendered with', filtered.length, 'rows');
+  console.log('✅ Table rendered successfully with', rowCount, 'rows');
   console.log('--- renderReportsTable END ---');
 }
 
@@ -280,24 +356,50 @@ function renderCharts(projects, tasks) {
   // Calculate task completion trend for the last 7 days
   const last7Days = [];
   const completedByDay = {};
+  const today = new Date();
+  
+  console.log('📅 Generating last 7 days data...');
   
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
+    date.setHours(0, 0, 0, 0);
     const dateStr = date.toLocaleDateString('en-US');
     last7Days.push(dateStr);
     completedByDay[dateStr] = 0;
   }
 
-  // Count completed tasks by day
+  console.log('📅 Date range:', last7Days);
+  console.log('🔍 Analyzing tasks for completion dates...');
+
+  // Count completed tasks by day - check both updatedAt and createdAt
+  let tasksAnalyzed = 0;
+  let completedTasksFound = 0;
+  
   tasks.forEach(task => {
-    if (task.status === 'done' || task.status === 'completed' || task.status === 'Completed') {
-      const completedDate = task.updatedAt ? new Date(task.updatedAt).toLocaleDateString('en-US') : null;
-      if (completedDate && completedByDay.hasOwnProperty(completedDate)) {
-        completedByDay[completedDate]++;
+    tasksAnalyzed++;
+    const isCompleted = task.status === 'done' || task.status === 'completed' || task.status === 'Completed';
+    
+    if (isCompleted) {
+      completedTasksFound++;
+      // Try updatedAt first, then createdAt as fallback
+      const completedDate = task.updatedAt ? 
+        new Date(task.updatedAt).toLocaleDateString('en-US') : 
+        (task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US') : null);
+      
+      if (completedDate) {
+        if (completedByDay.hasOwnProperty(completedDate)) {
+          completedByDay[completedDate]++;
+          console.log(`  ✓ Task "${task.title}" completed on ${completedDate}`);
+        } else {
+          console.log(`  ℹ Task "${task.title}" completed on ${completedDate} (outside 7-day range)`);
+        }
       }
     }
   });
+
+  console.log(`📊 Tasks Analysis: ${tasksAnalyzed} total, ${completedTasksFound} completed`);
+  console.log('📊 Completion by day:', completedByDay);
 
   const completionData = last7Days.map(date => completedByDay[date]);
   const dayLabels = last7Days.map(date => {
@@ -305,7 +407,10 @@ function renderCharts(projects, tasks) {
     return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
   });
 
-  console.log('📈 Task completion trend:', { dayLabels, completionData });
+  console.log('📈 Chart data prepared:');
+  console.log('   Labels:', dayLabels);
+  console.log('   Data:', completionData);
+  console.log('   Total completed in range:', completionData.reduce((a, b) => a + b, 0));
 
   // Tasks Chart - Line chart showing completion trend
   const tasksChartEl = document.getElementById("tasksChart");
@@ -319,47 +424,96 @@ function renderCharts(projects, tasks) {
     // Destroy existing chart if it exists
     const existingChart = Chart.getChart(tasksChartEl);
     if (existingChart) {
-      console.log('Destroying existing tasks chart');
+      console.log('🗑️ Destroying existing tasks chart');
       existingChart.destroy();
     }
 
-    new Chart(tasksChartEl, {
-      type: "line",
-      data: {
-        labels: dayLabels,
-        datasets: [{
-          label: "Completed Tasks",
-          data: completionData,
-          borderColor: "#3b3b63",
-          backgroundColor: "rgba(59,59,99,0.2)",
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                return `Completed: ${context.parsed.y} tasks`;
+    try {
+      const chart = new Chart(tasksChartEl, {
+        type: "line",
+        data: {
+          labels: dayLabels,
+          datasets: [{
+            label: "Completed Tasks",
+            data: completionData,
+            borderColor: "#4B49AC",
+            backgroundColor: "rgba(75, 73, 172, 0.1)",
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: "#4B49AC",
+            pointBorderColor: "#fff",
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { 
+              display: true,
+              labels: {
+                color: '#333',
+                font: {
+                  size: 12,
+                  weight: 'bold'
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `Completed: ${context.parsed.y} task${context.parsed.y !== 1 ? 's' : ''}`;
+                },
+                title: function(context) {
+                  const index = context[0].dataIndex;
+                  return last7Days[index];
+                }
+              },
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: '#4B49AC',
+              borderWidth: 1
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1,
+                color: '#666'
+              },
+              grid: {
+                color: 'rgba(0, 0, 0, 0.1)'
+              },
+              title: {
+                display: true,
+                text: 'Number of Tasks',
+                color: '#333',
+                font: {
+                  weight: 'bold'
+                }
+              }
+            },
+            x: {
+              ticks: {
+                color: '#666'
+              },
+              grid: {
+                display: false
               }
             }
           }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              stepSize: 1
-            }
-          }
         }
-      }
-    });
-    console.log('✅ Tasks line chart created');
+      });
+      console.log('✅ Tasks line chart created successfully!');
+      console.log('📊 Chart instance:', chart);
+    } catch (error) {
+      console.error('❌ Error creating chart:', error);
+    }
   }
 
   // Project Chart - Doughnut chart showing project status
@@ -370,53 +524,161 @@ function renderCharts(projects, tasks) {
     console.error('❌ Chart.js library not loaded');
   } else {
     console.log('✅ Creating project doughnut chart...');
+    console.log('📊 Total projects received:', projects.length);
     
-    const activeProjects = projects.filter(p => p.status === 'active' || p.status === 'progress').length;
-    const completedProjects = projects.filter(p => p.status === 'completed' || p.status === 'done').length;
-    const pendingProjects = projects.filter(p => p.status === 'pending' || p.status === 'todo').length;
-
-    console.log('📊 Project status breakdown:', { activeProjects, completedProjects, pendingProjects });
+    if (projects.length > 0) {
+      console.log('📋 Sample project:', projects[0]);
+    }
+    
+    // Count projects by status with all possible variants
+    const activeProjects = projects.filter(p => {
+      const status = (p.status || '').toLowerCase();
+      return status === 'active' || status === 'progress' || status === 'in progress' || status === 'in-progress';
+    }).length;
+    
+    const completedProjects = projects.filter(p => {
+      const status = (p.status || '').toLowerCase();
+      return status === 'completed' || status === 'done' || status === 'finished';
+    }).length;
+    
+    const pendingProjects = projects.filter(p => {
+      const status = (p.status || '').toLowerCase();
+      return status === 'pending' || status === 'todo' || status === 'not started';
+    }).length;
+    
+    // Check all project statuses (for debugging)
+    const allStatuses = projects.map(p => p.status);
+    const uniqueStatuses = [...new Set(allStatuses)];
+    console.log('📊 All unique project statuses found:', uniqueStatuses);
+    console.log('📊 Project status breakdown:', { 
+      activeProjects, 
+      completedProjects, 
+      pendingProjects,
+      total: projects.length,
+      accounted: activeProjects + completedProjects + pendingProjects
+    });
+    
+    // Check for unaccounted projects
+    const unaccounted = projects.length - (activeProjects + completedProjects + pendingProjects);
+    if (unaccounted > 0) {
+      console.warn(`⚠️ ${unaccounted} project(s) have unrecognized status values:`, 
+        projects.filter(p => {
+          const status = (p.status || '').toLowerCase();
+          return !(
+            status === 'active' || status === 'progress' || status === 'in progress' || status === 'in-progress' ||
+            status === 'completed' || status === 'done' || status === 'finished' ||
+            status === 'pending' || status === 'todo' || status === 'not started'
+          );
+        }).map(p => ({ title: p.title, status: p.status }))
+      );
+    }
 
     // Destroy existing chart if it exists
     const existingChart = Chart.getChart(projectChartEl);
     if (existingChart) {
-      console.log('Destroying existing project chart');
+      console.log('🗑️ Destroying existing project chart');
       existingChart.destroy();
     }
 
-    new Chart(projectChartEl, {
-      type: "doughnut",
-      data: {
-        labels: ["Active", "Completed", "Pending"],
-        datasets: [{
-          data: [activeProjects, completedProjects, pendingProjects],
-          backgroundColor: ["#0d6efd", "#198754", "#ffc107"]
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { 
-            position: "bottom",
-            labels: {
-              padding: 15,
-              font: {
-                size: 12
-              }
-            }
+    try {
+      const totalProjects = activeProjects + completedProjects + pendingProjects;
+      
+      if (totalProjects === 0) {
+        console.warn('⚠️ No projects with recognized statuses to display in chart');
+        // Display empty state message
+        const ctx = projectChartEl.getContext('2d');
+        ctx.clearRect(0, 0, projectChartEl.width, projectChartEl.height);
+        ctx.font = '14px Poppins, sans-serif';
+        ctx.fillStyle = '#999';
+        ctx.textAlign = 'center';
+        ctx.fillText('No project data available', projectChartEl.width / 2, projectChartEl.height / 2);
+      } else {
+        const chart = new Chart(projectChartEl, {
+          type: "doughnut",
+          data: {
+            labels: ["Active", "Completed", "Pending"],
+            datasets: [{
+              data: [activeProjects, completedProjects, pendingProjects],
+              backgroundColor: [
+                "#0d6efd",  // Blue for Active
+                "#198754",  // Green for Completed
+                "#ffc107"   // Yellow/Orange for Pending
+              ],
+              borderWidth: 3,
+              borderColor: "#fff",
+              hoverOffset: 10,
+              hoverBorderWidth: 4,
+              hoverBorderColor: "#4B49AC"
+            }]
           },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                return `${context.label}: ${context.parsed} projects`;
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',  // Makes it a donut (not just a pie)
+            plugins: {
+              legend: { 
+                position: "bottom",
+                labels: {
+                  padding: 20,
+                  font: {
+                    size: 13,
+                    weight: 'bold',
+                    family: 'Poppins, sans-serif'
+                  },
+                  color: '#333',
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  boxWidth: 12,
+                  boxHeight: 12
+                }
+              },
+              tooltip: {
+                enabled: true,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                titleFont: {
+                  size: 14,
+                  weight: 'bold'
+                },
+                bodyFont: {
+                  size: 13
+                },
+                padding: 12,
+                borderColor: '#4B49AC',
+                borderWidth: 2,
+                cornerRadius: 8,
+                displayColors: true,
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.parsed || 0;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                    return `${label}: ${value} project${value !== 1 ? 's' : ''} (${percentage}%)`;
+                  },
+                  title: function(context) {
+                    return 'Project Status';
+                  }
+                }
               }
+            },
+            animation: {
+              animateRotate: true,
+              animateScale: true,
+              duration: 1000,
+              easing: 'easeInOutQuart'
             }
           }
-        }
+        });
+        console.log('✅ Project doughnut chart created successfully!');
+        console.log('📊 Chart instance:', chart);
+        console.log('📊 Chart data:', chart.data.datasets[0].data);
       }
-    });
-    console.log('✅ Project doughnut chart created');
+    } catch (error) {
+      console.error('❌ Error creating project chart:', error);
+      console.error('Error stack:', error.stack);
+    }
   }
   
   console.log('--- renderCharts END ---');
