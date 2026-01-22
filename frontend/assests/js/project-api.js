@@ -541,13 +541,13 @@ async function handleEditProject(e) {
     return;
   }
 
-  // Get the current project to retrieve assignedTo members
+  // Get the current project to retrieve members
   const project = projects.find(p => p._id === currentEditProjectId);
   
   // Extract member IDs properly (handle both populated and non-populated cases)
-  let assignedToIds = [];
-  if (project && project.assignedTo) {
-    assignedToIds = project.assignedTo.map(member => {
+  let memberIds = [];
+  if (project && project.members) {
+    memberIds = project.members.map(member => {
       // If member is an object (populated), extract the _id
       if (typeof member === 'object' && member !== null && member._id) {
         return member._id;
@@ -560,7 +560,7 @@ async function handleEditProject(e) {
   const projectData = {
     title: projectName,
     description: projectDesc,
-    assignedTo: assignedToIds,
+    members: memberIds,
     startDate: projectStartDate,
     endDate: projectDueDate,
     status: projectStatus
@@ -690,8 +690,8 @@ async function editProject(projectId) {
     document.getElementById('editProjectDueDate').value = project.endDate ? project.endDate.split('T')[0] : '';
     document.getElementById('editProjectStatus').value = project.status || 'In Progress';
 
-    // Render existing members (use assignedTo)
-    renderMembers(project.assignedTo || []);
+    // Render existing members (use members)
+    renderMembers(project.members || []);
 
     // Show edit modal
     const editModal = new bootstrap.Modal(document.getElementById('editProjectModal'));
@@ -785,9 +785,9 @@ async function handleAddMember() {
   const project = projects.find(p => p._id === currentEditProjectId);
   if (!project) return;
 
-  // Initialize assignedTo array if not exists
-  if (!project.assignedTo) {
-    project.assignedTo = [];
+  // Initialize members array if not exists
+  if (!project.members) {
+    project.members = [];
   }
 
   try {
@@ -810,7 +810,7 @@ async function handleAddMember() {
       const user = users[0];
       
       // Check if member already exists (check by user ID or email)
-      const memberExists = project.assignedTo.some(m => {
+      const memberExists = project.members.some(m => {
         if (typeof m === 'object' && m._id) {
           return m._id === user._id;
         }
@@ -823,15 +823,46 @@ async function handleAddMember() {
       }
 
       // Add member (store user ID)
-      project.assignedTo.push(user._id);
-      
-      // Re-render members (show email for display)
-      renderMembers(project.assignedTo, [user]);
-      
-      // Clear input
-      input.value = '';
-      
-      alert(`✅ ${user.name || user.email} added to project!`);
+      project.members.push(user._id);
+
+      // Persist change immediately to backend so it reflects for other users/tabs
+      try {
+        const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
+        const token = localStorage.getItem('token');
+        const memberIds = project.members.map(m => (typeof m === 'object' && m !== null && m._id) ? m._id : m);
+        const updateResp = await fetch(`${API_URL}/api/projects/${currentEditProjectId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ members: memberIds })
+        });
+
+        if (updateResp.ok) {
+          const updatedProject = await updateResp.json();
+          // Update local projects array with fresh data
+          const idx = projects.findIndex(p => p._id === currentEditProjectId);
+          const projectData = updatedProject.project || updatedProject;
+          if (idx !== -1) projects[idx] = projectData;
+
+          // Re-render members (show email/name for display)
+          renderMembers(projectData.members || []);
+          input.value = '';
+          alert(`✅ ${user.name || user.email} added to project!`);
+        } else {
+          // revert local change if update fails
+          project.members = project.members.filter(id => id !== user._id);
+          const err = await updateResp.json().catch(() => ({}));
+          console.error('Failed to persist member addition:', err);
+          alert('❌ Failed to add member to project. Please try again.');
+        }
+      } catch (err) {
+        // revert local change if network error
+        project.members = project.members.filter(id => id !== user._id);
+        console.error('Error persisting member addition:', err);
+        alert('❌ Error adding member. Please check your connection.');
+      }
     } else {
       alert('❌ Failed to find user. Please try again.');
     }
@@ -842,12 +873,56 @@ async function handleAddMember() {
 }
 
 // Remove a member
-function removeMember(index) {
+async function removeMember(index) {
   const project = projects.find(p => p._id === currentEditProjectId);
-  if (!project || !project.assignedTo) return;
+  if (!project || !project.members) return;
 
-  project.assignedTo.splice(index, 1);
-  renderMembers(project.assignedTo);
+  // Store the removed member info for potential undo
+  const removedMember = project.members[index];
+
+  // Remove from local state
+  project.members.splice(index, 1);
+
+  // Persist change to backend
+  try {
+    const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
+    const token = localStorage.getItem('token');
+    const memberIds = project.members.map(m => (typeof m === 'object' && m !== null && m._id) ? m._id : m);
+    
+    const updateResp = await fetch(`${API_URL}/api/projects/${currentEditProjectId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ members: memberIds })
+    });
+
+    if (updateResp.ok) {
+      const updatedProject = await updateResp.json();
+      // Update local projects array with fresh data
+      const idx = projects.findIndex(p => p._id === currentEditProjectId);
+      const projectData = updatedProject.project || updatedProject;
+      if (idx !== -1) projects[idx] = projectData;
+
+      // Re-render members
+      renderMembers(projectData.members || []);
+      alert('✅ Member removed from project!');
+    } else {
+      // Revert local change if update fails
+      project.members.splice(index, 0, removedMember);
+      renderMembers(project.members);
+      const err = await updateResp.json().catch(() => ({}));
+      console.error('Failed to remove member:', err);
+      alert('❌ Failed to remove member from project. Please try again.');
+    }
+  } catch (err) {
+    // Revert local change if network error
+    project.members.splice(index, 0, removedMember);
+    renderMembers(project.members);
+    console.error('Error removing member:', err);
+    alert('❌ Error removing member. Please check your connection.');
+  }
 }
 
 // Delete project

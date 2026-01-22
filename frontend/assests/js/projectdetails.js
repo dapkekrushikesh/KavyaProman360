@@ -189,9 +189,21 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Update details with real data
     const detailsHTML = `
-      <div class="detail-item">
+      <div class="detail-item" style="position: relative;">
         <i class="fa-solid fa-users"></i>
-        <span>${membersCount} ${membersText}</span>
+        <span id="memberCountSpan">${membersCount} ${membersText}</span>
+        <button class="btn btn-sm" id="membersDropdownBtn" style="background: none; border: none; padding: 0; margin-left: 5px; cursor: pointer; color: #52528c;" title="View members">
+          <i class="fa-solid fa-chevron-down" id="dropdownIcon"></i>
+        </button>
+        <!-- Members Dropdown List -->
+        <div id="membersDropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; min-width: 250px; max-height: 300px; overflow-y: auto;">
+          <div style="padding: 12px; border-bottom: 1px solid #eee;">
+            <h6 style="margin: 0; font-weight: 600; color: #52528c;">Project Members</h6>
+          </div>
+          <div id="membersList" style="padding: 8px 0;">
+            <!-- Members will be loaded here -->
+          </div>
+        </div>
       </div>
       <div class="detail-item">
         <i class="fa-solid fa-user-tie"></i>
@@ -217,12 +229,17 @@ document.addEventListener("DOMContentLoaded", () => {
     
     if (!silentRefresh) {
       detailsDiv.innerHTML = detailsHTML;
+      // Setup members dropdown after HTML is inserted
+      setupMembersDropdown();
+      populateMembersDropdown(teamArray);
     } else {
       // Smooth update for silent refresh
       detailsDiv.style.opacity = '0.7';
       detailsDiv.innerHTML = detailsHTML;
       setTimeout(() => {
         detailsDiv.style.opacity = '1';
+        setupMembersDropdown();
+        populateMembersDropdown(teamArray);
       }, 200);
     }
   }
@@ -252,8 +269,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
       };
       
-      // Get assignee name or email
-      const assigneeName = task.assignedTo?.name || task.assignedTo?.email || task.assignedTo || 'Unassigned';
+      // Get assignee name or email - backend returns 'assignee', not 'assignedTo'
+      const assigneeName = task.assignee?.name || task.assignee?.email || task.assignee || 'Unassigned';
       
       row.innerHTML = `
         <td>${task.title || task.name || 'Untitled Task'}</td>
@@ -267,8 +284,8 @@ document.addEventListener("DOMContentLoaded", () => {
             <option value="done" ${task.status === 'done' ? 'selected' : ''}>Completed</option>
           </select>
         </td>
-        <td>${formatDate(task.createdAt || task.assignedDate)}</td>
-        <td>${formatDate(task.dueDate || task.due)}</td>
+        <td>${formatDate(task.startDate || task.assignedDate)}</td>
+        <td>${formatDate(task.endDate || task.dueDate)}</td>
         <td>
           <button class="btn btn-sm edit-btn" style="background:#52528c;color:#fff;" data-task-id="${task._id}">
             <i class="fa-solid fa-edit"></i> Edit
@@ -285,21 +302,21 @@ document.addEventListener("DOMContentLoaded", () => {
         
         editTaskName.value = task.title || task.name || '';
         
-        // If assignedTo is an object with email, use that; otherwise use the value directly
-        const assigneeEmail = task.assignedTo?.email || task.assignedTo || '';
+        // If assignee is an object with email, use that; otherwise use the value directly
+        const assigneeEmail = task.assignee?.email || task.assignee || '';
         editTaskAssignedTo.value = assigneeEmail;
         
         editTaskStatus.value = task.status || 'todo';
         
-        // Set dates
-        const assignedDate = task.createdAt || task.assignedDate;
-        if (assignedDate) {
-          editTaskAssignedDate.value = new Date(assignedDate).toISOString().split('T')[0];
+        // Set dates - use startDate and endDate from backend
+        const startDate = task.startDate || task.assignedDate;
+        if (startDate) {
+          editTaskAssignedDate.value = new Date(startDate).toISOString().split('T')[0];
         }
         
-        const dueDate = task.dueDate || task.due;
-        if (dueDate) {
-          editTaskDue.value = new Date(dueDate).toISOString().split('T')[0];
+        const endDate = task.endDate || task.dueDate;
+        if (endDate) {
+          editTaskDue.value = new Date(endDate).toISOString().split('T')[0];
         }
 
         const modal = new bootstrap.Modal(document.getElementById("editTaskModal"));
@@ -473,32 +490,52 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const assignedDate = addTaskAssignedDate.value;
-    const dueDate = addTaskDue.value;
+    const title = addTaskName.value.trim();
+    const assignedToEmail = addTaskAssignedTo.value.trim();
+    const status = addTaskStatus.value;
+    const startDate = addTaskAssignedDate.value;
+    const endDate = addTaskDue.value;
     
-    // Validate dates: due date must not be before assigned date
-    if (assignedDate && dueDate && dueDate < assignedDate) {
-      alert('❌ Due date cannot be before the assigned date!');
+    if (!title || !assignedToEmail || !startDate || !endDate) {
+      alert("Please fill all required fields");
       return;
     }
-
-    const newTask = {
-      title: addTaskName.value.trim(),
-      description: '', // Optional
-      projectId: currentProjectId,
-      assignedTo: addTaskAssignedTo.value.trim(),
-      status: addTaskStatus.value,
-      assignedDate: assignedDate,
-      dueDate: dueDate
-    };
-
-    if (!newTask.title || !newTask.assignedTo) {
-      alert("Please fill all required fields");
+    
+    // Validate dates: due date must not be before assigned date
+    if (startDate && endDate && endDate < startDate) {
+      alert('❌ Due date cannot be before the assigned date!');
       return;
     }
 
     try {
       const token = localStorage.getItem('token');
+      
+      // First, search for the user by email
+      const userSearchRes = await fetch(`${API_URL}/api/users?search=${encodeURIComponent(assignedToEmail)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!userSearchRes.ok) {
+        throw new Error('Failed to search for user');
+      }
+      
+      const users = await userSearchRes.json();
+      if (!users || users.length === 0) {
+        alert(`❌ User not found: "${assignedToEmail}". Please enter a valid email address of a registered user.`);
+        return;
+      }
+      
+      const assigneeId = users[0]._id;
+      
+      const newTask = {
+        title,
+        description: '', // Optional
+        project: currentProjectId,
+        assignee: assigneeId,
+        status: status || 'todo',
+        startDate,
+        endDate
+      };
       
       const response = await fetch(`${API_URL}/api/tasks`, {
         method: 'POST',
@@ -523,6 +560,9 @@ document.addEventListener("DOMContentLoaded", () => {
       addTaskForm.reset();
       const modal = bootstrap.Modal.getInstance(document.getElementById("addTaskModal"));
       modal.hide();
+      
+      // Show success message
+      alert('✅ Task added successfully!');
       
       // Reload data
       await loadProjectData();
@@ -566,6 +606,83 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.key === 'taskUpdateNotification') {
       console.log('Task update detected from another page, refreshing...');
       refreshProjectDetails();
+    }
+  });
+
+  // Setup members dropdown functionality
+  function setupMembersDropdown() {
+    const membersDropdownBtn = document.getElementById('membersDropdownBtn');
+    const membersDropdown = document.getElementById('membersDropdown');
+    const dropdownIcon = document.getElementById('dropdownIcon');
+    
+    if (!membersDropdownBtn || !membersDropdown) return;
+    
+    // Remove any existing event listeners by cloning
+    const newBtn = membersDropdownBtn.cloneNode(true);
+    membersDropdownBtn.parentNode.replaceChild(newBtn, membersDropdownBtn);
+    
+    const updatedBtn = document.getElementById('membersDropdownBtn');
+    
+    // Toggle dropdown on button click
+    updatedBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const isHidden = membersDropdown.style.display === 'none';
+      membersDropdown.style.display = isHidden ? 'block' : 'none';
+      
+      // Rotate icon
+      const icon = document.getElementById('dropdownIcon');
+      if (icon) {
+        icon.style.transition = 'transform 0.3s ease';
+        icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+      }
+    });
+  }
+
+  // Populate members dropdown list
+  function populateMembersDropdown(members) {
+    const membersList = document.getElementById('membersList');
+    if (!membersList) return;
+    
+    if (!members || !Array.isArray(members) || members.length === 0) {
+      membersList.innerHTML = '<div style="padding: 12px; text-align: center; color: #999;">No members assigned</div>';
+      return;
+    }
+    
+    membersList.innerHTML = members.map((member, index) => {
+      const memberName = member.name || member.email || 'Unknown';
+      const memberEmail = member.email || 'No email';
+      const memberRole = member.role || 'Member';
+      
+      return `
+        <div style="padding: 12px 12px; border-bottom: ${index < members.length - 1 ? '1px solid #eee' : 'none'}; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f5f5f5';" onmouseout="this.style.backgroundColor='transparent';">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #52528c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">
+            ${memberName.charAt(0).toUpperCase()}
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 500; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              ${memberName}
+            </div>
+            <div style="font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              ${memberEmail}
+            </div>
+            <div style="font-size: 11px; color: #999;">
+              ${memberRole}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const membersDropdown = document.getElementById('membersDropdown');
+    if (membersDropdown && !e.target.closest('.detail-item')) {
+      membersDropdown.style.display = 'none';
+      const dropdownIcon = document.getElementById('dropdownIcon');
+      if (dropdownIcon) {
+        dropdownIcon.style.transform = 'rotate(0deg)';
+      }
     }
   });
 

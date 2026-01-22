@@ -5,8 +5,6 @@ if (!localStorage.getItem('token')) {
   window.location.href = 'index.html';
 }
 
-const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman-backend.onrender.com';
-
 // Initialize statistics on page load
 window.addEventListener('load', () => {
   console.log('⚡ Window loaded - initializing default values');
@@ -20,8 +18,11 @@ window.addEventListener('load', () => {
   // Set initial loading state
   Object.entries(elements).forEach(([key, el]) => {
     if (el) {
-      el.textContent = '...';
+      el.textContent = '0';
       el.style.color = '#999';
+      console.log(`✅ Initialized ${key}`);
+    } else {
+      console.error(`❌ Element for ${key} not found during initialization`);
     }
   });
 });
@@ -35,21 +36,38 @@ function logoutUser() {
 document.addEventListener('DOMContentLoaded', function() {
   console.log('🚀 Reports page loaded');
   console.log('API_CONFIG available:', typeof window.API_CONFIG !== 'undefined');
-  console.log('API_URL:', API_URL);
+  console.log('API_URL:', window.API_URL);
   console.log('Token exists:', !!localStorage.getItem('token'));
   
   // Check if DOM elements exist
   console.log('DOM Elements check:');
-  console.log('- totalProjects:', !!document.getElementById('totalProjects'));
-  console.log('- totalTasks:', !!document.getElementById('totalTasks'));
-  console.log('- completedTasks:', !!document.getElementById('completedTasks'));
-  console.log('- overdueTasks:', !!document.getElementById('overdueTasks'));
-  console.log('- tasksChart:', !!document.getElementById('tasksChart'));
-  console.log('- projectChart:', !!document.getElementById('projectChart'));
-  console.log('- reportTable:', !!document.getElementById('reportTable'));
+  const elementsToCheck = [
+    'totalProjects',
+    'totalTasks',
+    'completedTasks',
+    'overdueTasks',
+    'tasksChart',
+    'projectChart',
+    'reportWiseChart',
+    'reportTable',
+    'filterSelect',
+    'searchInput',
+    'downloadBtn'
+  ];
+  
+  elementsToCheck.forEach(id => {
+    const el = document.getElementById(id);
+    console.log(`- ${id}: ${el ? '✅ Found' : '❌ Not found'}`);
+  });
   
   setupMobileSidebar();
-  loadReportsData();
+  
+  // Load data after a small delay to ensure DOM is fully ready
+  setTimeout(() => {
+    console.log('📋 Starting to load reports data...');
+    loadReportsData();
+  }, 100);
+  
   setupEventListeners();
   
   // Auto-refresh reports every 30 seconds
@@ -108,15 +126,29 @@ async function loadReportsData() {
     const token = localStorage.getItem('token');
 
     console.log('=== REPORTS PAGE: Loading data ===');
-    console.log('API URL:', API_URL);
+    console.log('API URL:', window.API_URL);
     console.log('Token exists:', !!token);
+    console.log('Token:', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+
+    // Verify DOM elements exist before making requests
+    console.log('🔍 Verifying DOM elements before API call:');
+    const requiredElements = ['totalProjects', 'totalTasks', 'completedTasks', 'overdueTasks'];
+    requiredElements.forEach(id => {
+      const el = document.getElementById(id);
+      console.log(`   - #${id}: ${el ? '✅ FOUND' : '❌ NOT FOUND'}`);
+      if (el) {
+        console.log(`     Current value: "${el.textContent}"`);
+      }
+    });
 
     // Load projects and tasks for detailed reports
-    const projectsResponse = await fetch(`${API_URL}/api/projects`, {
+    console.log('📡 Fetching projects from:', `${window.API_URL}/api/projects`);
+    const projectsResponse = await fetch(`${window.API_URL}/api/projects`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    const tasksResponse = await fetch(`${API_URL}/api/tasks`, {
+    console.log('📡 Fetching tasks from:', `${window.API_URL}/api/tasks`);
+    const tasksResponse = await fetch(`${window.API_URL}/api/tasks`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -130,8 +162,27 @@ async function loadReportsData() {
       return;
     }
 
-    const projects = projectsResponse.ok ? await projectsResponse.json() : [];
-    const tasks = tasksResponse.ok ? await tasksResponse.json() : [];
+    // Parse responses
+    let projects = [];
+    let tasks = [];
+    
+    try {
+      const projectsData = await projectsResponse.json();
+      console.log('📊 Projects response data:', projectsData);
+      projects = Array.isArray(projectsData) ? projectsData : (projectsData.data || []);
+    } catch (e) {
+      console.error('❌ Error parsing projects response:', e);
+      projects = [];
+    }
+    
+    try {
+      const tasksData = await tasksResponse.json();
+      console.log('📊 Tasks response data:', tasksData);
+      tasks = Array.isArray(tasksData) ? tasksData : (tasksData.data || []);
+    } catch (e) {
+      console.error('❌ Error parsing tasks response:', e);
+      tasks = [];
+    }
 
     // Store data for export functionality
     currentReportsData = { projects, tasks };
@@ -156,84 +207,139 @@ async function loadReportsData() {
     }
 
     // Calculate statistics
-    console.log('Updating statistics...');
+    console.log('📝 Calling updateStatistics...');
     updateStatistics(projects, tasks);
     
-    console.log('Rendering reports table...');
+    console.log('📝 Calling renderReportsTable...');
     renderReportsTable(projects, tasks);
     
-    console.log('Rendering charts...');
+    console.log('📝 Calling renderCharts...');
     renderCharts(projects, tasks);
     
     console.log('=== REPORTS PAGE: Data loaded successfully ===');
   } catch (error) {
     console.error('❌ Error loading reports:', error);
     console.error('Error details:', error.message, error.stack);
-    alert('❌ Failed to load reports data. Please check your connection.');
+    console.error('Full error object:', error);
+    alert('❌ Failed to load reports data. Please check your connection and console logs.');
   }
 }
 
 function updateStatistics(projects, tasks) {
   console.log('--- updateStatistics START ---');
-  console.log('Projects data:', projects);
-  console.log('Tasks data:', tasks);
+  console.log('📥 Received - Projects:', projects, 'Tasks:', tasks);
+  console.log('📥 Types - Projects:', typeof projects, 'Tasks:', typeof tasks);
+  console.log('📥 Is Array - Projects:', Array.isArray(projects), 'Tasks:', Array.isArray(tasks));
+  
+  // Ensure we have valid data
+  if (!Array.isArray(projects)) {
+    console.error('❌ Projects is not an array:', typeof projects);
+    console.error('📥 Projects value:', projects);
+    projects = [];
+  }
+  if (!Array.isArray(tasks)) {
+    console.error('❌ Tasks is not an array:', typeof tasks);
+    console.error('📥 Tasks value:', tasks);
+    tasks = [];
+  }
+  
+  console.log('✅ After validation - Projects count:', projects.length, 'Tasks count:', tasks.length);
+  
+  // Helper function to safely update element
+  const updateElement = (elementId, value) => {
+    console.log(`   🔍 Updating #${elementId} with value: ${value}`);
+    const element = document.getElementById(elementId);
+    
+    if (!element) {
+      console.error(`   ❌ Element #${elementId} not found in DOM`);
+      return false;
+    }
+    
+    console.log(`   ✅ Element #${elementId} found`);
+    
+    // Verify element is in DOM
+    if (!document.body.contains(element)) {
+      console.error(`   ❌ Element #${elementId} is not in the DOM tree`);
+      return false;
+    }
+    
+    console.log(`   ✅ Element #${elementId} is in DOM tree`);
+    
+    // Update the element
+    const oldValue = element.textContent;
+    element.textContent = value.toString();
+    element.style.color = ''; // Reset color
+    
+    console.log(`   ✅ #${elementId}: "${oldValue}" → "${element.textContent}"`);
+    return true;
+  };
   
   // Total Projects
+  console.log('📊 Calculating Total Projects...');
   const totalProjects = projects.length;
-  const totalProjectsEl = document.getElementById('totalProjects');
-  if (totalProjectsEl) {
-    totalProjectsEl.textContent = totalProjects;
-    totalProjectsEl.style.color = ''; // Reset color
-    console.log('✅ Total Projects:', totalProjects);
-  } else {
-    console.error('❌ Element #totalProjects not found');
-  }
+  console.log(`   Count: ${totalProjects}`);
+  updateElement('totalProjects', totalProjects);
 
   // Total Tasks
+  console.log('📊 Calculating Total Tasks...');
   const totalTasks = tasks.length;
-  const totalTasksEl = document.getElementById('totalTasks');
-  if (totalTasksEl) {
-    totalTasksEl.textContent = totalTasks;
-    totalTasksEl.style.color = ''; // Reset color
-    console.log('✅ Total Tasks:', totalTasks);
-  } else {
-    console.error('❌ Element #totalTasks not found');
-  }
+  console.log(`   Count: ${totalTasks}`);
+  updateElement('totalTasks', totalTasks);
 
   // Completed Tasks
-  const completedTasks = tasks.filter(t => 
-    t.status === 'done' || t.status === 'completed' || t.status === 'Completed'
-  ).length;
-  const completedTasksEl = document.getElementById('completedTasks');
-  if (completedTasksEl) {
-    completedTasksEl.textContent = completedTasks;
-    completedTasksEl.style.color = ''; // Reset color
-    console.log('✅ Completed Tasks:', completedTasks);
-  } else {
-    console.error('❌ Element #completedTasks not found');
-  }
+  console.log('📊 Calculating Completed Tasks...');
+  const completedTasks = tasks.filter(t => {
+    if (!t || !t.status) {
+      console.log('   ⚠️ Task missing status:', t);
+      return false;
+    }
+    const status = (t.status || '').toLowerCase();
+    const isCompleted = status === 'done' || status === 'completed';
+    if (isCompleted) {
+      console.log(`   ✓ Completed task: "${t.title}" (status: ${t.status})`);
+    }
+    return isCompleted;
+  }).length;
+  console.log(`   Count: ${completedTasks}`);
+  updateElement('completedTasks', completedTasks);
 
   // Overdue Tasks (tasks past due date and not completed)
+  console.log('📊 Calculating Overdue Tasks...');
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Reset time to midnight for accurate comparison
+  console.log(`   Today: ${today.toLocaleDateString()}`);
   
   const overdueTasks = tasks.filter(t => {
-    if (t.status === 'done' || t.status === 'completed' || t.status === 'Completed') return false;
+    if (!t || !t.status) return false;
+    
+    const status = (t.status || '').toLowerCase();
+    // Skip completed tasks
+    if (status === 'done' || status === 'completed') {
+      return false;
+    }
+    
     const dueDate = t.dueDate || t.deadline || t.due;
-    if (!dueDate) return false;
-    const deadline = new Date(dueDate);
-    deadline.setHours(0, 0, 0, 0);
-    return deadline < today;
+    if (!dueDate) {
+      console.log(`   ℹ Task "${t.title}" has no due date`);
+      return false;
+    }
+    
+    try {
+      const deadline = new Date(dueDate);
+      deadline.setHours(0, 0, 0, 0);
+      const isOverdue = deadline < today;
+      if (isOverdue) {
+        console.log(`   ✓ Overdue task: "${t.title}" (deadline: ${deadline.toLocaleDateString()})`);
+      }
+      return isOverdue;
+    } catch (e) {
+      console.warn(`   ⚠️ Invalid date for task "${t.title}":`, dueDate, e);
+      return false;
+    }
   }).length;
   
-  const overdueTasksEl = document.getElementById('overdueTasks');
-  if (overdueTasksEl) {
-    overdueTasksEl.textContent = overdueTasks;
-    overdueTasksEl.style.color = ''; // Reset color
-    console.log('✅ Overdue Tasks:', overdueTasks);
-  } else {
-    console.error('❌ Element #overdueTasks not found');
-  }
+  console.log(`   Count: ${overdueTasks}`);
+  updateElement('overdueTasks', overdueTasks);
 
   console.log('📊 Statistics Summary:', {
     totalProjects,
@@ -241,6 +347,15 @@ function updateStatistics(projects, tasks) {
     completedTasks,
     overdueTasks
   });
+  
+  // Final verification
+  console.log('🔍 Final verification of updated elements:');
+  requiredElements = ['totalProjects', 'totalTasks', 'completedTasks', 'overdueTasks'];
+  requiredElements.forEach(id => {
+    const el = document.getElementById(id);
+    console.log(`   - #${id}: value="${el ? el.textContent : 'NOT FOUND'}"`);
+  });
+  
   console.log('--- updateStatistics END ---');
 }
 
@@ -677,6 +792,141 @@ function renderCharts(projects, tasks) {
       }
     } catch (error) {
       console.error('❌ Error creating project chart:', error);
+      console.error('Error stack:', error.stack);
+    }
+  }
+  
+  // Report-wise Pie Chart - showing total projects, tasks, completed, and overdue
+  const reportWiseChartEl = document.getElementById("reportWiseChart");
+  if (!reportWiseChartEl) {
+    console.error('❌ Element #reportWiseChart not found');
+  } else if (typeof Chart === 'undefined') {
+    console.error('❌ Chart.js library not loaded');
+  } else {
+    console.log('✅ Creating report-wise pie chart...');
+    
+    // Calculate report-wise data
+    const totalProjects = projects.length;
+    const totalTasks = tasks.length;
+    
+    const completedTasks = tasks.filter(t => 
+      t.status === 'done' || t.status === 'completed' || t.status === 'Completed'
+    ).length;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const overdueTasks = tasks.filter(t => {
+      if (t.status === 'done' || t.status === 'completed' || t.status === 'Completed') return false;
+      const dueDate = t.dueDate || t.deadline || t.due;
+      if (!dueDate) return false;
+      const deadline = new Date(dueDate);
+      deadline.setHours(0, 0, 0, 0);
+      return deadline < today;
+    }).length;
+    
+    console.log('📊 Report-wise data:', {
+      totalProjects,
+      totalTasks,
+      completedTasks,
+      overdueTasks
+    });
+    
+    // Destroy existing chart if it exists
+    const existingChart = Chart.getChart(reportWiseChartEl);
+    if (existingChart) {
+      console.log('🗑️ Destroying existing report-wise chart');
+      existingChart.destroy();
+    }
+    
+    try {
+      const chart = new Chart(reportWiseChartEl, {
+        type: "pie",
+        data: {
+          labels: [
+            "Total Projects",
+            "Total Tasks",
+            "Completed Tasks",
+            "Overdue Tasks"
+          ],
+          datasets: [{
+            data: [totalProjects, totalTasks, completedTasks, overdueTasks],
+            backgroundColor: [
+              "#0d6efd",  // Blue for Total Projects
+              "#6f42c1",  // Purple for Total Tasks
+              "#198754",  // Green for Completed Tasks
+              "#dc3545"   // Red for Overdue Tasks
+            ],
+            borderWidth: 2,
+            borderColor: "#fff",
+            hoverOffset: 10,
+            hoverBorderWidth: 4,
+            hoverBorderColor: "#4B49AC"
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { 
+              position: "bottom",
+              labels: {
+                padding: 15,
+                font: {
+                  size: 12,
+                  weight: 'bold',
+                  family: 'Poppins, sans-serif'
+                },
+                color: '#333',
+                usePointStyle: true,
+                pointStyle: 'circle',
+                boxWidth: 12,
+                boxHeight: 12
+              }
+            },
+            tooltip: {
+              enabled: true,
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              titleFont: {
+                size: 14,
+                weight: 'bold'
+              },
+              bodyFont: {
+                size: 13
+              },
+              padding: 12,
+              borderColor: '#4B49AC',
+              borderWidth: 2,
+              cornerRadius: 8,
+              displayColors: true,
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                  return `${label}: ${value} (${percentage}%)`;
+                },
+                title: function(context) {
+                  return 'Report Summary';
+                }
+              }
+            }
+          },
+          animation: {
+            animateRotate: true,
+            animateScale: true,
+            duration: 1000,
+            easing: 'easeInOutQuart'
+          }
+        }
+      });
+      console.log('✅ Report-wise pie chart created successfully!');
+      console.log('📊 Chart instance:', chart);
+    } catch (error) {
+      console.error('❌ Error creating report-wise chart:', error);
       console.error('Error stack:', error.stack);
     }
   }

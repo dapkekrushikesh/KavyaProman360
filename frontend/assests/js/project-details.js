@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   await loadProjectDetails(projectId);
   await loadProjectTasks(projectId);
   hideNewTaskButtonForTeamMembers();
+  setupMembersDropdown();
   
   // Auto-refresh project details every 10 seconds for real-time updates
   refreshInterval = setInterval(() => {
@@ -72,6 +73,73 @@ function hideNewTaskButtonForTeamMembers() {
   }
 }
 
+// Setup members dropdown functionality
+function setupMembersDropdown() {
+  const membersDropdownBtn = document.getElementById('membersDropdownBtn');
+  const membersDropdown = document.getElementById('membersDropdown');
+  const dropdownIcon = document.getElementById('dropdownIcon');
+  
+  if (!membersDropdownBtn || !membersDropdown) return;
+  
+  // Toggle dropdown on button click
+  membersDropdownBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const isHidden = membersDropdown.style.display === 'none';
+    membersDropdown.style.display = isHidden ? 'block' : 'none';
+    
+    // Rotate icon
+    if (isHidden) {
+      dropdownIcon.style.transform = 'rotate(180deg)';
+    } else {
+      dropdownIcon.style.transform = 'rotate(0deg)';
+    }
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.detail-item')) {
+      membersDropdown.style.display = 'none';
+      dropdownIcon.style.transform = 'rotate(0deg)';
+    }
+  });
+}
+
+// Populate members dropdown list
+function populateMembersDropdown(members) {
+  const membersList = document.getElementById('membersList');
+  if (!membersList) return;
+  
+  if (!members || members.length === 0) {
+    membersList.innerHTML = '<div style="padding: 12px; text-align: center; color: #999;">No members assigned</div>';
+    return;
+  }
+  
+  membersList.innerHTML = members.map((member, index) => {
+    const memberName = member.name || member.email || 'Unknown';
+    const memberEmail = member.email || 'No email';
+    const memberRole = member.role || 'Member';
+    
+    return `
+      <div style="padding: 12px 12px; border-bottom: ${index < members.length - 1 ? '1px solid #eee' : 'none'}; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f5f5f5';" onmouseout="this.style.backgroundColor='transparent';">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: #52528c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">
+          ${memberName.charAt(0).toUpperCase()}
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-weight: 500; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${memberName}
+          </div>
+          <div style="font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${memberEmail}
+          </div>
+          <div style="font-size: 11px; color: #999;">
+            ${memberRole}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 async function loadProjectDetails(projectId, silentRefresh = false) {
   const token = localStorage.getItem('token');
   try {
@@ -81,8 +149,8 @@ async function loadProjectDetails(projectId, silentRefresh = false) {
     if (!res.ok) throw new Error('Failed to load project');
     const project = await res.json();
     
-    // Fetch tasks to calculate task count and completion
-    const tasksRes = await fetch(`/api/tasks?project=${projectId}`, {
+    // Fetch tasks to calculate task count and completion (project-specific)
+    const tasksRes = await fetch(`/api/projects/${projectId}/tasks`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const tasks = tasksRes.ok ? await tasksRes.json() : [];
@@ -127,6 +195,10 @@ async function loadProjectDetails(projectId, silentRefresh = false) {
     if (detailItems.length >= 6) {
       // Members count
       const membersCount = project.members ? project.members.length : 0;
+      const memberCountSpan = document.getElementById('memberCountSpan');
+      if (memberCountSpan) {
+        memberCountSpan.textContent = `${membersCount} Member${membersCount !== 1 ? 's' : ''}`;
+      }
       detailItems[0].textContent = `${membersCount} Member${membersCount !== 1 ? 's' : ''}`;
       
       // Created by
@@ -158,6 +230,9 @@ async function loadProjectDetails(projectId, silentRefresh = false) {
       
       // Completion percentage
       detailItems[5].textContent = `${completionPercentage}% Complete`;
+      
+      // Populate members dropdown
+      populateMembersDropdown(project.members || []);
     }
     
     if (!silentRefresh) {
@@ -206,13 +281,13 @@ async function loadEmployeePerformance(projectId, tasks) {
     // Calculate performance for each employee
     const employeePerformance = {};
     
-    // Initialize performance data for all assigned members
-    if (project.assignedTo && Array.isArray(project.assignedTo)) {
-      project.assignedTo.forEach(member => {
+    // Initialize performance data for all assigned members (use `members` field returned by API)
+    if (project.members && Array.isArray(project.members)) {
+      project.members.forEach(member => {
         const memberId = member._id || member;
         employeePerformance[memberId] = {
-          name: member.name || 'Unknown',
-          email: member.email || '',
+          name: (member && member.name) || 'Unknown',
+          email: (member && member.email) || '',
           totalTasks: 0,
           completedTasks: 0,
           inProgressTasks: 0,
@@ -246,20 +321,20 @@ async function loadEmployeePerformance(projectId, tasks) {
       const employee = employeePerformance[assigneeId];
       employee.totalTasks++;
       
-      // Count by status
-      const status = task.status || 'Pending';
-      if (status === 'Completed') {
+      // Count by status (case-insensitive)
+      const status = (task.status || 'Pending').toString().toLowerCase();
+      if (status === 'completed' || status === 'done') {
         employee.completedTasks++;
-      } else if (status === 'In Progress') {
+      } else if (status === 'in progress' || status === 'inprogress' || status === 'in-progress') {
         employee.inProgressTasks++;
-      } else if (status === 'Pending') {
+      } else if (status === 'pending') {
         employee.pendingTasks++;
-      } else if (status === 'To Do') {
+      } else if (status === 'to do' || status === 'todo') {
         employee.todoTasks++;
       }
       
-      // Check if overdue
-      if (task.endDate && status !== 'Completed') {
+      // Check if overdue (only consider non-completed tasks)
+      if (task.endDate && status !== 'completed' && status !== 'done') {
         const dueDate = new Date(task.endDate);
         const today = new Date();
         if (dueDate < today) {
@@ -291,7 +366,7 @@ async function loadEmployeePerformance(projectId, tasks) {
     
     performanceSection.innerHTML = sortedEmployees.map(([employeeId, employee]) => {
       const progressColor = employee.completionRate >= 80 ? '#28a745' : 
-                           employee.completionRate >= 50 ? '#ffc107' : '#dc3545';
+                            employee.completionRate >= 50 ? '#ffc107' : '#dc3545';
       
       return `
         <div class="col-lg-4 col-md-6 mb-3">
@@ -482,11 +557,28 @@ function renderTasks(tasks) {
       day: 'numeric' 
     }) : 'N/A';
     
+    // Normalize status for display and badge class
+    const normalizedStatus = (task.status || 'pending').toString().toLowerCase();
+    let badgeClass = 'warning';
+    let displayStatus = 'Pending';
+    if (normalizedStatus === 'completed' || normalizedStatus === 'done') {
+      badgeClass = 'success';
+      displayStatus = 'Completed';
+    } else if (normalizedStatus === 'in progress' || normalizedStatus === 'inprogress' || normalizedStatus === 'in-progress') {
+      badgeClass = 'primary';
+      displayStatus = 'In Progress';
+    } else if (normalizedStatus === 'pending' || normalizedStatus === 'todo' || normalizedStatus === 'to do') {
+      badgeClass = 'warning';
+      displayStatus = 'Pending';
+    } else {
+      displayStatus = task.status || 'Pending';
+    }
+
     return `
       <tr>
         <td>${task.title}</td>
         <td>${task.assignee ? (task.assignee.name || task.assignee.email) : 'Unassigned'}</td>
-        <td><span class="badge bg-${task.status === 'Completed' ? 'success' : task.status === 'In Progress' ? 'primary' : 'warning'}">${task.status || 'Pending'}</span></td>
+        <td><span class="badge bg-${badgeClass}">${displayStatus}</span></td>
         <td>${assignedDate}</td>
         <td>${dueDate}</td>
         <td>

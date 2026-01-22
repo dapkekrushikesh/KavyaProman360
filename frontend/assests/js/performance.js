@@ -62,8 +62,9 @@
 
     async function loadPerformanceData() {
       const token = localStorage.getItem('token');
-      const monthFilter = document.getElementById('monthFilter').value;
-      const API_URL = window.API_CONFIG?.BASE_URL || 'https://kavyaproman360-backend.onrender.com';
+        const monthFilter = document.getElementById('monthFilter').value;
+      // Use configured API base URL when provided; otherwise use relative paths (same origin)
+      const API_URL = window.API_CONFIG?.BASE_URL || '';
       
       if (!token) {
         window.location.href = 'index.html';
