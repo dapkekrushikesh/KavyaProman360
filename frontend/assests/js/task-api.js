@@ -89,6 +89,42 @@ function setupEventListeners() {
       renderTasks(tasks);
     });
   }
+
+  // Add date validation for new task modal
+  const taskAssignedDate = document.getElementById("taskAssignedDate");
+  const taskDueDate = document.getElementById("taskDueDate");
+  if (taskAssignedDate && taskDueDate) {
+    taskAssignedDate.addEventListener("change", () => {
+      // Set minimum due date to assigned date
+      if (taskAssignedDate.value) {
+        taskDueDate.min = taskAssignedDate.value;
+        
+        // If due date is before assigned date, clear it
+        if (taskDueDate.value && taskDueDate.value < taskAssignedDate.value) {
+          taskDueDate.value = '';
+          alert('⚠️ Due date has been cleared because it was before the assigned date. Please select a new due date.');
+        }
+      }
+    });
+  }
+
+  // Add date validation for edit task modal
+  const editTaskAssignedDate = document.getElementById("editTaskAssignedDate");
+  const editTaskDueDate = document.getElementById("editTaskDueDate");
+  if (editTaskAssignedDate && editTaskDueDate) {
+    editTaskAssignedDate.addEventListener("change", () => {
+      // Set minimum due date to assigned date
+      if (editTaskAssignedDate.value) {
+        editTaskDueDate.min = editTaskAssignedDate.value;
+        
+        // If due date is before assigned date, clear it
+        if (editTaskDueDate.value && editTaskDueDate.value < editTaskAssignedDate.value) {
+          editTaskDueDate.value = '';
+          alert('⚠️ Due date has been cleared because it was before the assigned date. Please select a new due date.');
+        }
+      }
+    });
+  }
 }
 
 // Load tasks from backend
@@ -278,6 +314,17 @@ async function handleAddTask(e) {
   const taskPriority = document.getElementById('taskPriority').value;
   const taskStatus = document.getElementById('taskStatus').value;
 
+  // Validate dates: Due date must not be before assigned date
+  if (taskAssignedDate && taskDueDate) {
+    const assignedDate = new Date(taskAssignedDate);
+    const dueDate = new Date(taskDueDate);
+    
+    if (dueDate < assignedDate) {
+      alert('❌ Due date cannot be before the assigned date. Please select a valid due date.');
+      return;
+    }
+  }
+
   // Find user by email if provided
   let assigneeId = null;
   if (taskAssigneeEmail) {
@@ -454,6 +501,17 @@ async function handleEditTask(e) {
   const taskDueDate = document.getElementById('editTaskDueDate').value;
   const taskPriority = document.getElementById('editTaskPriority').value;
   const taskStatus = document.getElementById('editTaskStatus').value;
+
+  // Validate dates: Due date must not be before assigned date
+  if (taskAssignedDate && taskDueDate) {
+    const assignedDate = new Date(taskAssignedDate);
+    const dueDate = new Date(taskDueDate);
+    
+    if (dueDate < assignedDate) {
+      alert('❌ Due date cannot be before the assigned date. Please select a valid due date.');
+      return;
+    }
+  }
 
   // Find user by email if provided
   let assigneeId = null;
